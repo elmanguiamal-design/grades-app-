@@ -3,21 +3,22 @@
 <head>
   <meta charset="utf-8">
   <title>School Grades</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h2 { color: #333; }
-    input, button, select { margin: 5px; padding: 8px; }
+    input, button, select { margin: 5px; padding: 8px; width: 95%; max-width: 300px; }
     button { background: #007bff; color: white; border: none; border-radius: 4px; }
     button:hover { background: #0056b3; }
     #gradesList, #usersList { margin-top: 15px; padding: 0; list-style: none; }
-    #gradesList li, #usersList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; }
+    #gradesList li, #usersList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; word-break: break-word; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
   <h2>📚 School Grades System</h2>
 
-  <!-- LOGIN FORM -->
+  <!-- LOGIN / SIGNUP -->
   <div id="loginSection">
     <h3>Signup / Login</h3>
     <input id="email" placeholder="Email">
@@ -26,12 +27,12 @@
     <button id="login">Login</button>
   </div>
 
-  <!-- MAIN APP -->
+  <!-- APP -->
   <div id="appSection" class="hidden">
     <h3>Welcome, <span id="userEmail"></span> (<span id="userSection"></span>)</h3>
     <button id="logout">Logout</button>
 
-    <!-- ADMIN ONLY -->
+    <!-- ADMIN -->
     <div id="adminSection" class="hidden">
       <h3>Add Grade</h3>
       <input id="student" placeholder="Student Name">
@@ -43,7 +44,7 @@
       </select>
       <button id="save">Save Grade</button>
 
-      <h3>Manage Students</h3>
+      <h3>Assign Section to Student</h3>
       <input id="newStudentEmail" placeholder="Student Email">
       <select id="newStudentSection">
         <option value="juan">Section Juan</option>
@@ -53,7 +54,7 @@
       <ul id="usersList"></ul>
     </div>
 
-    <!-- EVERYONE -->
+    <!-- GRADES -->
     <h3>Grades</h3>
     <ul id="gradesList"></ul>
   </div>
@@ -63,6 +64,7 @@
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
 
+    // 🔹 Replace with your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -79,26 +81,29 @@
     const ADMIN_EMAIL = "admin@gmail.com";
     let currentSection = "";
 
-    // --- Signup ---
+    // Inputs
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    // --- SIGNUP ---
     document.getElementById('signup').onclick = async () => {
       try {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
         alert("✅ Signed up! Wait for admin to assign your section.");
-      } catch (e) { alert(e.message); }
+      } catch (e) { alert("Error: " + e.message); }
     };
 
-    // --- Login ---
+    // --- LOGIN ---
     document.getElementById('login').onclick = async () => {
       try {
-        await signInWithEmailAndPassword(auth, email.value, password.value);
-      } catch (e) { alert(e.message); }
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      } catch (e) { alert("Error: " + e.message); }
     };
 
+    // --- LOGOUT ---
     document.getElementById('logout').onclick = async () => { await signOut(auth); };
 
-    // --- Save Grade (admin) ---
+    // --- SAVE GRADE (admin only) ---
     document.getElementById('save').onclick = async () => {
       try {
         const student = document.getElementById('student').value;
@@ -108,35 +113,26 @@
         await addDoc(collection(db, "grades"), { student, subject, grade, section });
         alert("✅ Grade saved!");
         loadGrades();
-      } catch (e) { alert(e.message); }
+      } catch (e) { alert("Error: " + e.message); }
     };
 
-    // --- Assign Section to Student ---
+    // --- ASSIGN SECTION (admin only) ---
     document.getElementById('assignSection').onclick = async () => {
       try {
         const email = document.getElementById('newStudentEmail').value;
         const section = document.getElementById('newStudentSection').value;
-
-        // Find user by email in auth → store section in Firestore under "users"
-        const usersQuery = query(collection(db, "users"), where("email", "==", email));
-        const snap = await getDocs(usersQuery);
-        if (!snap.empty) {
-          snap.forEach(async docSnap => {
-            await setDoc(doc(db, "users", docSnap.id), { section });
-          });
-        } else {
-          alert("✅ Student section assigned (will be created at first login).");
-          await setDoc(doc(db, "users", email), { section });
-        }
+        // Save in users collection
+        await setDoc(doc(db, "users", email), { section });
+        alert("✅ Section assigned!");
         loadUsers();
-      } catch (e) { alert(e.message); }
+      } catch (e) { alert("Error: " + e.message); }
     };
 
-    // --- Load Grades ---
+    // --- LOAD GRADES ---
     async function loadGrades() {
-      const querySnap = await getDocs(collection(db, "grades"));
       const list = document.getElementById('gradesList');
       list.innerHTML = "";
+      const querySnap = await getDocs(collection(db, "grades"));
       querySnap.forEach(docSnap => {
         const data = docSnap.data();
         if (auth.currentUser.email === ADMIN_EMAIL || data.section === currentSection) {
@@ -147,7 +143,7 @@
       });
     }
 
-    // --- Load users for admin ---
+    // --- LOAD USERS FOR ADMIN ---
     async function loadUsers() {
       const list = document.getElementById('usersList');
       list.innerHTML = "";
@@ -155,23 +151,24 @@
       querySnap.forEach(docSnap => {
         const data = docSnap.data();
         const li = document.createElement('li');
-        li.textContent = `${data.email || docSnap.id} - Section: ${data.section || "Not assigned"}`;
+        li.textContent = `${docSnap.id} - Section: ${data.section || "Not assigned"}`;
         list.appendChild(li);
       });
     }
 
-    // --- Auth Listener ---
+    // --- AUTH STATE ---
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         if (user.email === ADMIN_EMAIL) {
           currentSection = "ALL";
         } else {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const userDoc = await getDoc(doc(db, "users", user.email));
           currentSection = userDoc.exists() ? userDoc.data().section : "Not assigned";
         }
 
         document.getElementById("loginSection").classList.add("hidden");
         document.getElementById("appSection").classList.remove("hidden");
+
         document.getElementById("userEmail").textContent = user.email;
         document.getElementById("userSection").textContent = (user.email === ADMIN_EMAIL) ? "Admin" : currentSection;
 
