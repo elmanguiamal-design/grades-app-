@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>School Grades System</title>
 <style>
-body { font-family: Arial, sans-serif; margin:10px; }
-h2,h3 { color:#333; }
-input,select,button { margin:5px;padding:8px;width:95%;max-width:300px; }
-button { background:#007bff;color:white;border:none;border-radius:4px; cursor:pointer; }
-button:hover { background:#0056b3; }
-table { border-collapse: collapse; width:100%; margin-bottom:15px; }
-th,td { border:1px solid #ccc; padding:5px; text-align:left; }
-.hidden { display:none; }
-.strength { font-weight:bold; margin-left:5px; }
-.showpass { cursor:pointer; color:#007bff; font-size:0.9em; margin-left:5px; }
+body{font-family:Arial,sans-serif;margin:10px;}
+h2,h3{color:#333;}
+input,select,button{margin:5px;padding:8px;width:95%;max-width:300px;}
+button{background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;}
+button:hover{background:#0056b3;}
+table{border-collapse:collapse;width:100%;margin-bottom:15px;}
+th,td{border:1px solid #ccc;padding:5px;text-align:left;}
+.hidden{display:none;}
+.strength{font-weight:bold;margin-left:5px;}
+.showpass{cursor:pointer;color:#007bff;font-size:0.9em;margin-left:5px;}
 </style>
 </head>
 <body>
@@ -23,7 +23,7 @@ th,td { border:1px solid #ccc; padding:5px; text-align:left; }
 
 <!-- LOGIN/SIGNUP -->
 <div id="loginSection">
-  <h3>Student Signup / Login</h3>
+  <h3>Signup / Login</h3>
   <div id="step1">
     <input id="email" type="email" placeholder="Email"><br>
     <button id="nextStep1">Next</button>
@@ -115,7 +115,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Firebase config
+// 🔹 Firebase config (replace with your project config)
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -124,69 +124,101 @@ const firebaseConfig = {
   messagingSenderId: "198578631587",
   appId: "1:198578631587:web:c97a46805e01441b49e016"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Admin email
 const ADMIN_EMAIL = "enzo@gmail.com";
 let currentUserLevel = "";
 let currentUserSection = "";
 
 // Elements
-const step1 = document.getElementById('step1');
-const step2 = document.getElementById('step2');
-const step3 = document.getElementById('step3');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const confirmPasswordInput = document.getElementById('confirmPassword');
-const strengthSpan = document.getElementById('strength');
-const togglePassword = document.getElementById('togglePassword');
-const toggleConfirm = document.getElementById('toggleConfirm');
-const toggleLogin = document.getElementById('toggleLogin');
-const loginPassword = document.getElementById('loginPassword');
-const loginEmail = document.getElementById('loginEmail');
+const step1=document.getElementById('step1');
+const step2=document.getElementById('step2');
+const step3=document.getElementById('step3');
+const emailInput=document.getElementById('email');
+const passwordInput=document.getElementById('password');
+const confirmPasswordInput=document.getElementById('confirmPassword');
+const strengthSpan=document.getElementById('strength');
+const togglePassword=document.getElementById('togglePassword');
+const toggleConfirm=document.getElementById('toggleConfirm');
+const toggleLogin=document.getElementById('toggleLogin');
+const loginPassword=document.getElementById('loginPassword');
+const loginEmail=document.getElementById('loginEmail');
 
-// SHOW/HIDE password
-togglePassword.onclick = () => {
-  passwordInput.type = passwordInput.type==='password'?'text':'password';
-  togglePassword.textContent = passwordInput.type==='password'?'Show':'Hide';
-};
-toggleConfirm.onclick = () => {
-  confirmPasswordInput.type = confirmPasswordInput.type==='password'?'text':'password';
-  toggleConfirm.textContent = confirmPasswordInput.type==='password'?'Show':'Hide';
-};
-toggleLogin.onclick = () => {
-  loginPassword.type = loginPassword.type==='password'?'text':'password';
-  toggleLogin.textContent = loginPassword.type==='password'?'Show':'Hide';
-};
+// 🔹 Show/hide password
+togglePassword.onclick=()=>{passwordInput.type=passwordInput.type==='password'?'text':'password';togglePassword.textContent=passwordInput.type==='password'?'Show':'Hide';};
+toggleConfirm.onclick=()=>{confirmPasswordInput.type=confirmPasswordInput.type==='password'?'text':'password';toggleConfirm.textContent=confirmPasswordInput.type==='password'?'Show':'Hide';};
+toggleLogin.onclick=()=>{loginPassword.type=loginPassword.type==='password'?'text':'password';toggleLogin.textContent=loginPassword.type==='password'?'Show':'Hide';};
 
 // Password strength
-passwordInput.oninput = () => {
-  const val = passwordInput.value;
-  let strength = "Weak";
-  if(val.length>=8 && /[A-Z]/.test(val) && /[0-9]/.test(val)) strength="Strong";
-  else if(val.length>=6) strength="Medium";
-  strengthSpan.textContent = strength;
-  strengthSpan.style.color = strength==="Strong"?"green":strength==="Medium"?"orange":"red";
-};
+passwordInput.oninput=()=>{const val=passwordInput.value;let s="Weak";if(val.length>=8&&/[A-Z]/.test(val)&&/[0-9]/.test(val))s="Strong";else if(val.length>=6)s="Medium";strengthSpan.textContent=s;strengthSpan.style.color=s==="Strong"?"green":s==="Medium"?"orange":"red";};
 
 // Step navigation
-document.getElementById('nextStep1').onclick = ()=>{if(!emailInput.value.includes('@')){alert("Enter valid email");return;} step1.classList.add('hidden'); step2.classList.remove('hidden');};
-document.getElementById('backStep2').onclick = ()=>{ step2.classList.add('hidden'); step1.classList.remove('hidden');};
-document.getElementById('nextStep2').onclick = ()=>{ if(passwordInput.value.length<6){alert("Password too short");return;} step2.classList.add('hidden'); step3.classList.remove('hidden');};
-document.getElementById('backStep3').onclick = ()=>{ step3.classList.add('hidden'); step2.classList.remove('hidden');};
+document.getElementById('nextStep1').onclick=()=>{if(!emailInput.value.includes('@')){alert("Enter valid email");return;} step1.classList.add('hidden'); step2.classList.remove('hidden');};
+document.getElementById('backStep2').onclick=()=>{step2.classList.add('hidden'); step1.classList.remove('hidden');};
+document.getElementById('nextStep2').onclick=()=>{if(passwordInput.value.length<6){alert("Password too short");return;} step2.classList.add('hidden'); step3.classList.remove('hidden');};
+document.getElementById('backStep3').onclick=()=>{step3.classList.add('hidden'); step2.classList.remove('hidden');};
 
-// SIGNUP
-document.getElementById('signup').onclick = async () => {
-  if(passwordInput.value!==confirmPasswordInput.value){alert("Passwords do not match");return;}
-  try{
-    await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-    await setDoc(doc(db,"users",emailInput.value),{level:"",section:""});
-    alert("✅ Account created! Wait for admin to assign level/section.");
-    step3.classList.add('hidden'); step1.classList.remove('hidden');
-    emailInput.value=""; passwordInput.value=""; confirmPasswordInput.value=""; strengthSpan.textContent="";
-  }catch(e){alert("Error: "+e.message);}
+// Signup
+document.getElementById('signup').onclick=async()=>{
+if(passwordInput.value!==confirmPasswordInput.value){alert("Passwords do not match");return;}
+try{
+await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+await setDoc(doc(db,"users",emailInput.value),{level:"",section:""});
+alert("✅ Account created! Wait for admin to assign level/section.");
+step3.classList.add('hidden'); step1.classList.remove('hidden');
+emailInput.value=""; passwordInput.value=""; confirmPasswordInput.value=""; strengthSpan.textContent="";
+}catch(e){alert("Error: "+e.message);}
 };
 
-// LOGIN
+// Login
+document.getElementById('login').onclick=async()=>{
+try{await signInWithEmailAndPassword(auth,loginEmail.value,loginPassword.value);}catch(e){alert("Login failed: "+e.message);}
+};
+
+// Logout
+document.getElementById('logout').onclick=()=>{signOut(auth);};
+
+// 🔹 Auth state change
+onAuthStateChanged(auth,async(user)=>{
+if(user){
+document.getElementById('loginSection').classList.add('hidden');
+document.getElementById('appSection').classList.remove('hidden');
+document.getElementById('userEmailDisplay').textContent=user.email;
+const userDoc=await getDoc(doc(db,"users",user.email));
+if(userDoc.exists()){
+currentUserLevel=userDoc.data().level;
+currentUserSection=userDoc.data().section;
+document.getElementById('userLevelSection').textContent=currentUserLevel+" / "+currentUserSection;
+if(user.email===ADMIN_EMAIL){document.getElementById('adminSection').classList.remove('hidden');}else{document.getElementById('adminSection').classList.add('hidden');}
+loadGrades();
+}
+}else{
+document.getElementById('loginSection').classList.remove('hidden');
+document.getElementById('appSection').classList.add('hidden');
+}
+});
+
+// 🔹 Load Grades
+async function loadGrades(){
+const gradesDiv=document.getElementById('gradesTables');
+gradesDiv.innerHTML="";
+const snapshot=await getDocs(collection(db,"grades"));
+const levels=["7","8","9","10","11","12"];
+for(const lvl of levels){
+let table=`<h3>Level ${lvl}</h3><table><tr><th>Student</th><th>Section</th><th>Subject</th><th>Grade</th></tr>`;
+snapshot.forEach(doc=>{
+const g=doc.data();
+if(user.email===ADMIN_EMAIL || (g.level==lvl && g.section===currentUserSection)){
+table+=`<tr><td>${g.student}</td><td>${g.section}</td><td>${g.subject}</td><td>${g.grade}</td></tr>`;
+}
+});
+table+="</table>";
+gradesDiv.innerHTML+=table;
+}
+}
+</script>
+</body>
+  </html>
