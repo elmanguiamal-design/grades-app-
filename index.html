@@ -1,190 +1,186 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>School Grades</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { color: #333; }
-    input, button, select { margin: 5px; padding: 8px; width: 95%; max-width: 300px; }
-    button { background: #007bff; color: white; border: none; border-radius: 4px; }
-    button:hover { background: #0056b3; }
-    #gradesList, #usersList { margin-top: 15px; padding: 0; list-style: none; }
-    #gradesList li, #usersList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; word-break: break-word; }
-    .hidden { display: none; }
-  </style>
+<meta charset="utf-8">
+<title>School Grades System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+h2,h3 { color: #333; }
+input,button,select { margin:5px;padding:8px;width:95%;max-width:300px; }
+button { background:#007bff;color:white;border:none;border-radius:4px; }
+button:hover { background:#0056b3; }
+#gradesList,#usersList { margin-top:15px;padding:0;list-style:none; }
+#gradesList li,#usersList li { background:#f4f4f4;margin:5px 0;padding:8px;border-radius:4px;word-break:break-word; }
+.hidden { display:none; }
+.strength { font-weight:bold; margin-left:5px; }
+</style>
 </head>
 <body>
-  <h2>📚 School Grades System</h2>
 
-  <!-- LOGIN / SIGNUP -->
-  <div id="loginSection">
-    <h3>Signup / Login</h3>
-    <input id="email" placeholder="Email">
-    <input id="password" placeholder="Password" type="password">
+<h2>📚 School Grades System</h2>
+
+<!-- SIGNUP/LOGIN WIZARD -->
+<div id="loginSection">
+  <h3>Student Signup / Login</h3>
+  <div id="step1">
+    <input id="email" placeholder="Email" type="email"><br>
+    <button id="nextStep1">Next</button>
+  </div>
+  <div id="step2" class="hidden">
+    <input id="password" placeholder="Password" type="password"><span id="strength" class="strength"></span><br>
+    <button id="nextStep2">Next</button>
+    <button id="backStep2">Back</button>
+  </div>
+  <div id="step3" class="hidden">
+    <input id="confirmPassword" placeholder="Confirm Password" type="password"><br>
     <button id="signup">Sign Up</button>
-    <button id="login">Login</button>
+    <button id="backStep3">Back</button>
+  </div>
+  <hr>
+  <input id="loginEmail" placeholder="Login Email" type="email">
+  <input id="loginPassword" placeholder="Login Password" type="password">
+  <button id="login">Login</button>
+</div>
+
+<!-- APP -->
+<div id="appSection" class="hidden">
+  <h3>Welcome, <span id="userEmailDisplay"></span> (<span id="userSectionDisplay"></span>)</h3>
+  <button id="logout">Logout</button>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminSection" class="hidden">
+    <h3>Add Grade</h3>
+    <input id="student" placeholder="Student Name">
+    <input id="subject" placeholder="Subject">
+    <input id="grade" placeholder="Grade">
+    <select id="gradeSection"><option value="juan">Section Juan</option><option value="mamaw">Section Mamaw</option></select>
+    <button id="saveGrade">Save Grade</button>
+
+    <h3>Assign Section to Student</h3>
+    <input id="newStudentEmail" placeholder="Student Email">
+    <select id="newStudentSection"><option value="juan">Section Juan</option><option value="mamaw">Section Mamaw</option></select>
+    <button id="assignSection">Assign Section</button>
+    <ul id="usersList"></ul>
   </div>
 
-  <!-- APP -->
-  <div id="appSection" class="hidden">
-    <h3>Welcome, <span id="userEmail"></span> (<span id="userSection"></span>)</h3>
-    <button id="logout">Logout</button>
+  <!-- GRADES DISPLAY -->
+  <h3>Grades</h3>
+  <ul id="gradesList"></ul>
+</div>
 
-    <!-- ADMIN -->
-    <div id="adminSection" class="hidden">
-      <h3>Add Grade</h3>
-      <input id="student" placeholder="Student Name">
-      <input id="subject" placeholder="Subject">
-      <input id="grade" placeholder="Grade">
-      <select id="gradeSection">
-        <option value="juan">Section Juan</option>
-        <option value="mamaw">Section Mamaw</option>
-      </select>
-      <button id="save">Save Grade</button>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
 
-      <h3>Assign Section to Student</h3>
-      <input id="newStudentEmail" placeholder="Student Email">
-      <select id="newStudentSection">
-        <option value="juan">Section Juan</option>
-        <option value="mamaw">Section Mamaw</option>
-      </select>
-      <button id="assignSection">Assign Section</button>
-      <ul id="usersList"></ul>
-    </div>
+// 🔹 Firebase config - replace with your project config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    <!-- GRADES -->
-    <h3>Grades</h3>
-    <ul id="gradesList"></ul>
-  </div>
+// Admin email
+const ADMIN_EMAIL = "enzo@gmail.com";
+let currentSection = "";
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+// Elements
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const step3 = document.getElementById('step3');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const confirmPasswordInput = document.getElementById('confirmPassword');
+const strengthSpan = document.getElementById('strength');
 
-    // 🔹 Replace with your Firebase config
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+// --- Step navigation ---
+document.getElementById('nextStep1').onclick = () => {
+  if(!emailInput.value.includes('@')) { alert("Enter valid email"); return; }
+  step1.classList.add('hidden'); step2.classList.remove('hidden');
+};
+document.getElementById('backStep2').onclick = () => { step2.classList.add('hidden'); step1.classList.remove('hidden'); };
+document.getElementById('nextStep2').onclick = () => {
+  if(passwordInput.value.length < 6) { alert("Password too short"); return; }
+  step2.classList.add('hidden'); step3.classList.remove('hidden');
+};
+document.getElementById('backStep3').onclick = () => { step3.classList.add('hidden'); step2.classList.remove('hidden'); };
 
-    const ADMIN_EMAIL = "admin@gmail.com";
-    let currentSection = "";
+// --- Password strength checker ---
+passwordInput.oninput = () => {
+  const val = passwordInput.value;
+  let strength = "Weak";
+  if(val.length >= 8 && /[A-Z]/.test(val) && /[0-9]/.test(val)) strength="Strong";
+  else if(val.length >=6) strength="Medium";
+  strengthSpan.textContent = strength;
+  strengthSpan.style.color = strength==="Strong"?"green":strength==="Medium"?"orange":"red";
+};
 
-    // Inputs
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
+// --- Signup ---
+document.getElementById('signup').onclick = async () => {
+  if(passwordInput.value!==confirmPasswordInput.value){alert("Passwords do not match"); return;}
+  try{
+    await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+    alert("✅ Account created! Wait for admin to assign section.");
+    step3.classList.add('hidden'); step1.classList.remove('hidden');
+    emailInput.value=''; passwordInput.value=''; confirmPasswordInput.value=''; strengthSpan.textContent='';
+  } catch(e){alert("Error: "+e.message);}
+};
 
-    // --- SIGNUP ---
-    document.getElementById('signup').onclick = async () => {
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        alert("✅ Signed up! Wait for admin to assign your section.");
-      } catch (e) { alert("Error: " + e.message); }
-    };
+// --- Login ---
+document.getElementById('login').onclick = async () => {
+  try{ await signInWithEmailAndPassword(auth,loginEmail.value,loginPassword.value); } 
+  catch(e){ alert("Error: "+e.message); }
+};
 
-    // --- LOGIN ---
-    document.getElementById('login').onclick = async () => {
-      try {
-        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-      } catch (e) { alert("Error: " + e.message); }
-    };
+// --- Logout ---
+document.getElementById('logout').onclick = async () => { await signOut(auth); };
 
-    // --- LOGOUT ---
-    document.getElementById('logout').onclick = async () => { await signOut(auth); };
+// --- Save grade (admin) ---
+document.getElementById('saveGrade').onclick = async () => {
+  try{
+    const student = document.getElementById('student').value;
+    const subject = document.getElementById('subject').value;
+    const grade = document.getElementById('grade').value;
+    const section = document.getElementById('gradeSection').value;
+    await addDoc(collection(db,"grades"),{student,subject,grade,section});
+    alert("✅ Grade saved!"); loadGrades();
+  }catch(e){alert("Error: "+e.message);}
+};
 
-    // --- SAVE GRADE (admin only) ---
-    document.getElementById('save').onclick = async () => {
-      try {
-        const student = document.getElementById('student').value;
-        const subject = document.getElementById('subject').value;
-        const grade = document.getElementById('grade').value;
-        const section = document.getElementById('gradeSection').value;
-        await addDoc(collection(db, "grades"), { student, subject, grade, section });
-        alert("✅ Grade saved!");
-        loadGrades();
-      } catch (e) { alert("Error: " + e.message); }
-    };
+// --- Assign section ---
+document.getElementById('assignSection').onclick = async () => {
+  try{
+    const email = document.getElementById('newStudentEmail').value;
+    const section = document.getElementById('newStudentSection').value;
+    await setDoc(doc(db,"users",email),{section});
+    alert("✅ Section assigned!"); loadUsers();
+  }catch(e){alert("Error: "+e.message);}
+};
 
-    // --- ASSIGN SECTION (admin only) ---
-    document.getElementById('assignSection').onclick = async () => {
-      try {
-        const email = document.getElementById('newStudentEmail').value;
-        const section = document.getElementById('newStudentSection').value;
-        // Save in users collection
-        await setDoc(doc(db, "users", email), { section });
-        alert("✅ Section assigned!");
-        loadUsers();
-      } catch (e) { alert("Error: " + e.message); }
-    };
-
-    // --- LOAD GRADES ---
-    async function loadGrades() {
-      const list = document.getElementById('gradesList');
-      list.innerHTML = "";
-      const querySnap = await getDocs(collection(db, "grades"));
-      querySnap.forEach(docSnap => {
-        const data = docSnap.data();
-        if (auth.currentUser.email === ADMIN_EMAIL || data.section === currentSection) {
-          const li = document.createElement('li');
-          li.textContent = `${data.student} (${data.section}) - ${data.subject} : ${data.grade}`;
-          list.appendChild(li);
-        }
-      });
+// --- Load grades ---
+async function loadGrades(){
+  const list=document.getElementById('gradesList'); list.innerHTML="";
+  const snap=await getDocs(collection(db,"grades"));
+  snap.forEach(docSnap=>{
+    const data=docSnap.data();
+    if(auth.currentUser.email===ADMIN_EMAIL || data.section===currentSection){
+      const li=document.createElement('li');
+      li.textContent=`${data.student} (${data.section}) - ${data.subject} : ${data.grade}`;
+      list.appendChild(li);
     }
+  });
+}
 
-    // --- LOAD USERS FOR ADMIN ---
-    async function loadUsers() {
-      const list = document.getElementById('usersList');
-      list.innerHTML = "";
-      const querySnap = await getDocs(collection(db, "users"));
-      querySnap.forEach(docSnap => {
-        const data = docSnap.data();
-        const li = document.createElement('li');
-        li.textContent = `${docSnap.id} - Section: ${data.section || "Not assigned"}`;
-        list.appendChild(li);
-      });
-    }
-
-    // --- AUTH STATE ---
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (user.email === ADMIN_EMAIL) {
-          currentSection = "ALL";
-        } else {
-          const userDoc = await getDoc(doc(db, "users", user.email));
-          currentSection = userDoc.exists() ? userDoc.data().section : "Not assigned";
-        }
-
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("appSection").classList.remove("hidden");
-
-        document.getElementById("userEmail").textContent = user.email;
-        document.getElementById("userSection").textContent = (user.email === ADMIN_EMAIL) ? "Admin" : currentSection;
-
-        if (user.email === ADMIN_EMAIL) {
-          document.getElementById("adminSection").classList.remove("hidden");
-          loadUsers();
-        } else {
-          document.getElementById("adminSection").classList.add("hidden");
-        }
-
-        loadGrades();
-      } else {
-        document.getElementById("loginSection").classList.remove("hidden");
-        document.getElementById("appSection").classList.add("hidden");
-      }
-    });
-  </script>
-</body>
-</html>
+// --- Load users (admin) ---
+async function loadUsers(){
+  const list=document.getElementById('usersList'); list
