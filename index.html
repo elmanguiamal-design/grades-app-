@@ -1,8 +1,138 @@
-const firebaseConfig = {
-  apiKey: "AIza...abc",
-  authDomain: "myproject.firebaseapp.com",
-  projectId: "myproject",
-  storageBucket: "myproject.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
-};
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>School Grades</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { color: #333; }
+    input, button { margin: 5px; padding: 8px; }
+    button { background: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #0056b3; }
+    #gradesList { margin-top: 15px; padding: 0; list-style: none; }
+    #gradesList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>📚 School Grades System</h2>
+
+  <!-- LOGIN FORM -->
+  <div id="loginSection">
+    <h3>Login / Signup</h3>
+    <input id="email" placeholder="email">
+    <input id="password" placeholder="password" type="password">
+    <button id="signup">Sign Up</button>
+    <button id="login">Login</button>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appSection" class="hidden">
+    <h3>Welcome, <span id="userEmail"></span></h3>
+    <button id="logout">Logout</button>
+
+    <!-- ADMIN ONLY -->
+    <div id="adminSection" class="hidden">
+      <h3>Add / Edit Grade</h3>
+      <input id="student" placeholder="Student Name">
+      <input id="subject" placeholder="Subject">
+      <input id="grade" placeholder="Grade">
+      <button id="save">Save Grade</button>
+    </div>
+
+    <!-- EVERYONE -->
+    <h3>All Grades</h3>
+    <ul id="gradesList"></ul>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { getFirestore, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+
+    // 🔹 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 🔹 Set your admin email here
+    const ADMIN_EMAIL = "admin@gmail.com";
+
+    const loginSection = document.getElementById("loginSection");
+    const appSection = document.getElementById("appSection");
+    const adminSection = document.getElementById("adminSection");
+    const userEmailSpan = document.getElementById("userEmail");
+
+    document.getElementById('signup').onclick = async () => {
+      try {
+        await createUserWithEmailAndPassword(auth, email.value, password.value);
+        alert("✅ Signed up!");
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('login').onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, email.value, password.value);
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('logout').onclick = async () => {
+      await signOut(auth);
+    };
+
+    document.getElementById('save').onclick = async () => {
+      try {
+        const student = document.getElementById('student').value;
+        const subject = document.getElementById('subject').value;
+        const grade = document.getElementById('grade').value;
+        await addDoc(collection(db, "grades"), { student, subject, grade });
+        alert("✅ Grade saved!");
+        loadGrades();
+      } catch (e) { alert(e.message); }
+    };
+
+    async function loadGrades() {
+      const querySnap = await getDocs(collection(db, "grades"));
+      const list = document.getElementById('gradesList');
+      list.innerHTML = "";
+      querySnap.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${data.student} - ${data.subject} : ${data.grade}`;
+        list.appendChild(li);
+      });
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        // Show main app
+        loginSection.classList.add("hidden");
+        appSection.classList.remove("hidden");
+        userEmailSpan.textContent = user.email;
+
+        // Check if admin
+        if (user.email === ADMIN_EMAIL) {
+          adminSection.classList.remove("hidden");
+        } else {
+          adminSection.classList.add("hidden");
+        }
+
+        loadGrades();
+      } else {
+        // Show login only
+        loginSection.classList.remove("hidden");
+        appSection.classList.add("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
