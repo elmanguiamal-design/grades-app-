@@ -6,11 +6,11 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h2 { color: #333; }
-    input, button { margin: 5px; padding: 8px; }
+    input, button, select { margin: 5px; padding: 8px; }
     button { background: #007bff; color: white; border: none; border-radius: 4px; }
     button:hover { background: #0056b3; }
-    #gradesList { margin-top: 15px; padding: 0; list-style: none; }
-    #gradesList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; }
+    #gradesList, #usersList { margin-top: 15px; padding: 0; list-style: none; }
+    #gradesList li, #usersList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; }
     .hidden { display: none; }
   </style>
 </head>
@@ -19,38 +19,50 @@
 
   <!-- LOGIN FORM -->
   <div id="loginSection">
-    <h3>Login / Signup</h3>
-    <input id="email" placeholder="email">
-    <input id="password" placeholder="password" type="password">
+    <h3>Signup / Login</h3>
+    <input id="email" placeholder="Email">
+    <input id="password" placeholder="Password" type="password">
     <button id="signup">Sign Up</button>
     <button id="login">Login</button>
   </div>
 
   <!-- MAIN APP -->
   <div id="appSection" class="hidden">
-    <h3>Welcome, <span id="userEmail"></span></h3>
+    <h3>Welcome, <span id="userEmail"></span> (<span id="userSection"></span>)</h3>
     <button id="logout">Logout</button>
 
     <!-- ADMIN ONLY -->
     <div id="adminSection" class="hidden">
-      <h3>Add / Edit Grade</h3>
+      <h3>Add Grade</h3>
       <input id="student" placeholder="Student Name">
       <input id="subject" placeholder="Subject">
       <input id="grade" placeholder="Grade">
+      <select id="gradeSection">
+        <option value="juan">Section Juan</option>
+        <option value="mamaw">Section Mamaw</option>
+      </select>
       <button id="save">Save Grade</button>
+
+      <h3>Manage Students</h3>
+      <input id="newStudentEmail" placeholder="Student Email">
+      <select id="newStudentSection">
+        <option value="juan">Section Juan</option>
+        <option value="mamaw">Section Mamaw</option>
+      </select>
+      <button id="assignSection">Assign Section</button>
+      <ul id="usersList"></ul>
     </div>
 
     <!-- EVERYONE -->
-    <h3>All Grades</h3>
+    <h3>Grades</h3>
     <ul id="gradesList"></ul>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-    import { getFirestore, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
 
-    // 🔹 Replace with your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -64,75 +76,118 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 🔹 Set your admin email here
     const ADMIN_EMAIL = "admin@gmail.com";
+    let currentSection = "";
 
-    const loginSection = document.getElementById("loginSection");
-    const appSection = document.getElementById("appSection");
-    const adminSection = document.getElementById("adminSection");
-    const userEmailSpan = document.getElementById("userEmail");
-
+    // --- Signup ---
     document.getElementById('signup').onclick = async () => {
       try {
-        await createUserWithEmailAndPassword(auth, email.value, password.value);
-        alert("✅ Signed up!");
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("✅ Signed up! Wait for admin to assign your section.");
       } catch (e) { alert(e.message); }
     };
 
+    // --- Login ---
     document.getElementById('login').onclick = async () => {
       try {
         await signInWithEmailAndPassword(auth, email.value, password.value);
       } catch (e) { alert(e.message); }
     };
 
-    document.getElementById('logout').onclick = async () => {
-      await signOut(auth);
-    };
+    document.getElementById('logout').onclick = async () => { await signOut(auth); };
 
+    // --- Save Grade (admin) ---
     document.getElementById('save').onclick = async () => {
       try {
         const student = document.getElementById('student').value;
         const subject = document.getElementById('subject').value;
         const grade = document.getElementById('grade').value;
-        await addDoc(collection(db, "grades"), { student, subject, grade });
+        const section = document.getElementById('gradeSection').value;
+        await addDoc(collection(db, "grades"), { student, subject, grade, section });
         alert("✅ Grade saved!");
         loadGrades();
       } catch (e) { alert(e.message); }
     };
 
+    // --- Assign Section to Student ---
+    document.getElementById('assignSection').onclick = async () => {
+      try {
+        const email = document.getElementById('newStudentEmail').value;
+        const section = document.getElementById('newStudentSection').value;
+
+        // Find user by email in auth → store section in Firestore under "users"
+        const usersQuery = query(collection(db, "users"), where("email", "==", email));
+        const snap = await getDocs(usersQuery);
+        if (!snap.empty) {
+          snap.forEach(async docSnap => {
+            await setDoc(doc(db, "users", docSnap.id), { section });
+          });
+        } else {
+          alert("✅ Student section assigned (will be created at first login).");
+          await setDoc(doc(db, "users", email), { section });
+        }
+        loadUsers();
+      } catch (e) { alert(e.message); }
+    };
+
+    // --- Load Grades ---
     async function loadGrades() {
       const querySnap = await getDocs(collection(db, "grades"));
       const list = document.getElementById('gradesList');
       list.innerHTML = "";
-      querySnap.forEach(doc => {
-        const data = doc.data();
+      querySnap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (auth.currentUser.email === ADMIN_EMAIL || data.section === currentSection) {
+          const li = document.createElement('li');
+          li.textContent = `${data.student} (${data.section}) - ${data.subject} : ${data.grade}`;
+          list.appendChild(li);
+        }
+      });
+    }
+
+    // --- Load users for admin ---
+    async function loadUsers() {
+      const list = document.getElementById('usersList');
+      list.innerHTML = "";
+      const querySnap = await getDocs(collection(db, "users"));
+      querySnap.forEach(docSnap => {
+        const data = docSnap.data();
         const li = document.createElement('li');
-        li.textContent = `${data.student} - ${data.subject} : ${data.grade}`;
+        li.textContent = `${data.email || docSnap.id} - Section: ${data.section || "Not assigned"}`;
         list.appendChild(li);
       });
     }
 
-    onAuthStateChanged(auth, user => {
+    // --- Auth Listener ---
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Show main app
-        loginSection.classList.add("hidden");
-        appSection.classList.remove("hidden");
-        userEmailSpan.textContent = user.email;
-
-        // Check if admin
         if (user.email === ADMIN_EMAIL) {
-          adminSection.classList.remove("hidden");
+          currentSection = "ALL";
         } else {
-          adminSection.classList.add("hidden");
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          currentSection = userDoc.exists() ? userDoc.data().section : "Not assigned";
+        }
+
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("appSection").classList.remove("hidden");
+        document.getElementById("userEmail").textContent = user.email;
+        document.getElementById("userSection").textContent = (user.email === ADMIN_EMAIL) ? "Admin" : currentSection;
+
+        if (user.email === ADMIN_EMAIL) {
+          document.getElementById("adminSection").classList.remove("hidden");
+          loadUsers();
+        } else {
+          document.getElementById("adminSection").classList.add("hidden");
         }
 
         loadGrades();
       } else {
-        // Show login only
-        loginSection.classList.remove("hidden");
-        appSection.classList.add("hidden");
+        document.getElementById("loginSection").classList.remove("hidden");
+        document.getElementById("appSection").classList.add("hidden");
       }
     });
   </script>
 </body>
-    </html>
+</html>
