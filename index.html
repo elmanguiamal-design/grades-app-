@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>School Grades</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { color: #333; }
+    input, button { margin: 5px; padding: 8px; }
+    button { background: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #0056b3; }
+    #gradesList { margin-top: 15px; padding: 0; list-style: none; }
+    #gradesList li { background: #f4f4f4; margin: 5px 0; padding: 8px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h2>📚 School Grades System</h2>
+
+  <h3>Login / Signup</h3>
+  <input id="email" placeholder="email">
+  <input id="password" placeholder="password" type="password">
+  <button id="signup">Sign Up</button>
+  <button id="login">Login</button>
+
+  <h3>Add Grade</h3>
+  <input id="student" placeholder="Student Name">
+  <input id="subject" placeholder="Subject">
+  <input id="grade" placeholder="Grade">
+  <button id="save">Save Grade</button>
+
+  <h3>All Grades</h3>
+  <ul id="gradesList"></ul>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { getFirestore, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+
+    // 🔹 Replace with your Firebase config (Step 3)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    document.getElementById('signup').onclick = async () => {
+      try {
+        await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+        alert("✅ Signed up!");
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('login').onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+        alert("✅ Logged in!");
+        loadGrades();
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('save').onclick = async () => {
+      try {
+        const student = document.getElementById('student').value;
+        const subject = document.getElementById('subject').value;
+        const grade = document.getElementById('grade').value;
+
+        await addDoc(collection(db, "grades"), { student, subject, grade });
+        alert("✅ Grade saved!");
+        loadGrades();
+      } catch (e) { alert(e.message); }
+    };
+
+    async function loadGrades() {
+      const querySnap = await getDocs(collection(db, "grades"));
+      const list = document.getElementById('gradesList');
+      list.innerHTML = "";
+      querySnap.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${data.student} - ${data.subject} : ${data.grade}`;
+        list.appendChild(li);
+      });
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (user) { loadGrades(); }
+    });
+  </script>
+</body>
+  </html>
