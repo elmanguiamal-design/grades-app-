@@ -1,66 +1,58 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>School Grades System</title>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Grades System</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 10px; }
-h2,h3 { color: #333; }
-input,button,select { margin:5px;padding:8px;width:95%;max-width:300px; }
+body { font-family: Arial, sans-serif; margin:10px; }
+h2,h3 { color:#333; }
+input,select,button { margin:5px;padding:8px;width:95%;max-width:300px; }
 button { background:#007bff;color:white;border:none;border-radius:4px; cursor:pointer; }
 button:hover { background:#0056b3; }
-#gradesTables { margin-top:15px; }
-table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
-th, td { border:1px solid #ccc; padding:5px; text-align:left; }
+table { border-collapse: collapse; width:100%; margin-bottom:15px; }
+th,td { border:1px solid #ccc; padding:5px; text-align:left; }
 .hidden { display:none; }
 .strength { font-weight:bold; margin-left:5px; }
-.showpass { cursor:pointer; color:#007bff; margin-left:5px; font-size:0.9em; }
+.showpass { cursor:pointer; color:#007bff; font-size:0.9em; margin-left:5px; }
 </style>
 </head>
 <body>
 
 <h2>📚 School Grades System</h2>
 
-<!-- SIGNUP/LOGIN WIZARD -->
+<!-- LOGIN/SIGNUP -->
 <div id="loginSection">
   <h3>Student Signup / Login</h3>
-  
-  <!-- Step 1: Email -->
   <div id="step1">
-    <input id="email" placeholder="Email" type="email"><br>
+    <input id="email" type="email" placeholder="Email"><br>
     <button id="nextStep1">Next</button>
   </div>
-  
-  <!-- Step 2: Password -->
   <div id="step2" class="hidden">
-    <input id="password" placeholder="Password" type="password">
+    <input id="password" type="password" placeholder="Password">
     <span id="strength" class="strength"></span>
     <span id="togglePassword" class="showpass">Show</span><br>
     <button id="nextStep2">Next</button>
     <button id="backStep2">Back</button>
   </div>
-  
-  <!-- Step 3: Confirm -->
   <div id="step3" class="hidden">
-    <input id="confirmPassword" placeholder="Confirm Password" type="password">
+    <input id="confirmPassword" type="password" placeholder="Confirm Password">
     <span id="toggleConfirm" class="showpass">Show</span><br>
     <button id="signup">Sign Up</button>
     <button id="backStep3">Back</button>
   </div>
-  
   <hr>
-  <input id="loginEmail" placeholder="Login Email" type="email">
-  <input id="loginPassword" placeholder="Login Password" type="password">
+  <input id="loginEmail" type="email" placeholder="Login Email">
+  <input id="loginPassword" type="password" placeholder="Login Password">
   <span id="toggleLogin" class="showpass">Show</span><br>
   <button id="login">Login</button>
 </div>
 
-<!-- APP SECTION -->
+<!-- APP -->
 <div id="appSection" class="hidden">
   <h3>Welcome, <span id="userEmailDisplay"></span> (<span id="userLevelSection"></span>)</h3>
   <button id="logout">Logout</button>
-  
+
   <!-- Admin Panel -->
   <div id="adminSection" class="hidden">
     <h3>Grades Management</h3>
@@ -80,7 +72,7 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
     <input id="subject" placeholder="Subject">
     <input id="grade" placeholder="Grade">
     <button id="saveGrade">Save Grade</button>
-    
+
     <h3>Assign Student to Section</h3>
     <input id="studentEmailAssign" placeholder="Student Email">
     <select id="assignLevel">
@@ -96,7 +88,7 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
       <option value="Mamaw">Mamaw</option>
     </select>
     <button id="assignStudent">Assign</button>
-    
+
     <h3>Rename Section</h3>
     <select id="renameLevel">
       <option value="7">Level 7</option>
@@ -113,7 +105,7 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
     <input id="newSectionName" placeholder="New Section Name">
     <button id="renameSectionBtn">Rename Section</button>
   </div>
-  
+
   <!-- Grades Display -->
   <div id="gradesTables"></div>
 </div>
@@ -141,7 +133,7 @@ const ADMIN_EMAIL = "enzo@gmail.com";
 let currentUserLevel = "";
 let currentUserSection = "";
 
-// ELEMENTS
+// Elements
 const step1 = document.getElementById('step1');
 const step2 = document.getElementById('step2');
 const step3 = document.getElementById('step3');
@@ -152,8 +144,10 @@ const strengthSpan = document.getElementById('strength');
 const togglePassword = document.getElementById('togglePassword');
 const toggleConfirm = document.getElementById('toggleConfirm');
 const toggleLogin = document.getElementById('toggleLogin');
+const loginPassword = document.getElementById('loginPassword');
+const loginEmail = document.getElementById('loginEmail');
 
-// Password show/hide
+// SHOW/HIDE password
 togglePassword.onclick = () => {
   passwordInput.type = passwordInput.type==='password'?'text':'password';
   togglePassword.textContent = passwordInput.type==='password'?'Show':'Hide';
@@ -162,13 +156,12 @@ toggleConfirm.onclick = () => {
   confirmPasswordInput.type = confirmPasswordInput.type==='password'?'text':'password';
   toggleConfirm.textContent = confirmPasswordInput.type==='password'?'Show':'Hide';
 };
-const loginPassword = document.getElementById('loginPassword');
 toggleLogin.onclick = () => {
   loginPassword.type = loginPassword.type==='password'?'text':'password';
   toggleLogin.textContent = loginPassword.type==='password'?'Show':'Hide';
 };
 
-// Password strength checker
+// Password strength
 passwordInput.oninput = () => {
   const val = passwordInput.value;
   let strength = "Weak";
@@ -178,14 +171,22 @@ passwordInput.oninput = () => {
   strengthSpan.style.color = strength==="Strong"?"green":strength==="Medium"?"orange":"red";
 };
 
-// STEP navigation
-document.getElementById('nextStep1').onclick = () => {
-  if(!emailInput.value.includes('@')) { alert("Enter valid email"); return; }
-  step1.classList.add('hidden'); step2.classList.remove('hidden');
+// Step navigation
+document.getElementById('nextStep1').onclick = ()=>{if(!emailInput.value.includes('@')){alert("Enter valid email");return;} step1.classList.add('hidden'); step2.classList.remove('hidden');};
+document.getElementById('backStep2').onclick = ()=>{ step2.classList.add('hidden'); step1.classList.remove('hidden');};
+document.getElementById('nextStep2').onclick = ()=>{ if(passwordInput.value.length<6){alert("Password too short");return;} step2.classList.add('hidden'); step3.classList.remove('hidden');};
+document.getElementById('backStep3').onclick = ()=>{ step3.classList.add('hidden'); step2.classList.remove('hidden');};
+
+// SIGNUP
+document.getElementById('signup').onclick = async () => {
+  if(passwordInput.value!==confirmPasswordInput.value){alert("Passwords do not match");return;}
+  try{
+    await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+    await setDoc(doc(db,"users",emailInput.value),{level:"",section:""});
+    alert("✅ Account created! Wait for admin to assign level/section.");
+    step3.classList.add('hidden'); step1.classList.remove('hidden');
+    emailInput.value=""; passwordInput.value=""; confirmPasswordInput.value=""; strengthSpan.textContent="";
+  }catch(e){alert("Error: "+e.message);}
 };
-document.getElementById('backStep2').onclick = () => { step2.classList.add('hidden'); step1.classList.remove('hidden'); };
-document.getElementById('nextStep2').onclick = () => {
-  if(passwordInput.value.length<6){alert("Password too short"); return;}
-  step2.classList.add('hidden'); step3.classList.remove('hidden');
-};
-document.getElementById('backStep3').onclick = () => { step3.classList.add('hidden'); step2.classList.remove('
+
+// LOGIN
