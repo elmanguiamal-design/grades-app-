@@ -70,18 +70,18 @@ button:hover { background:#0056b3; }
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// 🔹 Firebase config - replace with your project config
+// 🔹 Firebase config (your project)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+  authDomain: "test-9c727.firebaseapp.com",
+  projectId: "test-9c727",
+  storageBucket: "test-9c727.firebasestorage.app",
+  messagingSenderId: "198578631587",
+  appId: "1:198578631587:web:c97a46805e01441b49e016"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -183,4 +183,40 @@ async function loadGrades(){
 
 // --- Load users (admin) ---
 async function loadUsers(){
-  const list=document.getElementById('usersList'); list
+  const list=document.getElementById('usersList'); list.innerHTML="";
+  const snap=await getDocs(collection(db,"users"));
+  snap.forEach(docSnap=>{
+    const data=docSnap.data();
+    const li=document.createElement('li');
+    li.textContent=`${docSnap.id} - Section: ${data.section||"Not assigned"}`;
+    list.appendChild(li);
+  });
+}
+
+// --- Auth state ---
+onAuthStateChanged(auth,async user=>{
+  if(user){
+    if(user.email===ADMIN_EMAIL) currentSection="ALL";
+    else {
+      const userDoc = await getDoc(doc(db,"users",user.email));
+      currentSection=userDoc.exists()?userDoc.data().section:"Not assigned";
+    }
+
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("appSection").classList.remove("hidden");
+
+    document.getElementById("userEmailDisplay").textContent=user.email;
+    document.getElementById("userSectionDisplay").textContent=(user.email===ADMIN_EMAIL)?"Admin":currentSection;
+
+    if(user.email===ADMIN_EMAIL){ document.getElementById("adminSection").classList.remove("hidden"); loadUsers();}
+    else{ document.getElementById("adminSection").classList.add("hidden"); }
+
+    loadGrades();
+  }else{
+    document.getElementById("loginSection").classList.remove("hidden");
+    document.getElementById("appSection").classList.add("hidden");
+  }
+});
+</script>
+</body>
+</html>
