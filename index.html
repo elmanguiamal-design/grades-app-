@@ -1,222 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<title>DANHS School Grades — Full</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-  body { font-family: Arial, sans-serif; padding: 18px; background:#f4f6f8; }
-  h1{margin-bottom:6px}
-  input, select, button, textarea { display:block; margin:6px 0; padding:8px; font-size:14px; width:100%; max-width:520px; box-sizing:border-box; }
-  table { width:100%; max-width:1100px; border-collapse:collapse; background:white; margin-top:10px; }
-  th,td { border:1px solid #ddd; padding:8px; text-align:left; }
-  .hidden{display:none;}
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .small { width:150px; }
-  .muted{color:#555;font-size:13px}
-  .danger{color:#b00020}
-  .card{background:white;padding:12px;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,0.05);margin-bottom:12px; max-width:1100px}
-  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
-</style>
-</head>
-<body>
-<h1>DANHS School Grades</h1>
-<div id="welcome" class="muted"></div>
-
-<!-- AUTH UI -->
-<div id="authContainer" class="card">
-  <div id="signupBox">
-    <h3>Signup</h3>
-    <input id="signupName" placeholder="Full name">
-    <input id="signupEmail" type="email" placeholder="Email">
-    <input id="signupPassword" type="password" placeholder="Password (min 6 chars)">
-    <div class="row">
-      <button id="signupBtn" onclick="signup()">Sign up</button>
-      <button id="goLoginBtn" onclick="showLogin()">I already have account</button>
-    </div>
-    <div id="signupMsg" class="muted"></div>
-  </div>
-
-  <div id="loginBox" class="hidden">
-    <h3>Login</h3>
-    <input id="loginEmail" type="email" placeholder="Email">
-    <input id="loginPassword" type="password" placeholder="Password">
-    <div class="row">
-      <button onclick="login()">Login</button>
-      <button onclick="showSignup()">Create account</button>
-    </div>
-    <div id="loginMsg" class="muted"></div>
-  </div>
-</div>
-
-<!-- Logged actions -->
-<div id="controls" class="card hidden">
-  <div class="flex-between">
-    <div>
-      <button id="profileBtn" onclick="openProfile()">My Profile</button>
-      <button id="logoutBtn" onclick="logout()">Logout</button>
-    </div>
-    <div id="adminControls" class="hidden">
-      <button onclick="reloadAll()">Refresh Data</button>
-    </div>
-  </div>
-</div>
-
-<!-- MAIN CONTENT -->
-<div id="main" class="hidden">
-
-  <!-- ADMIN PANEL -->
-  <div id="adminPanel" class="card hidden">
-    <h2>Admin Panel</h2>
-
-    <h3>Users (view/edit)</h3>
-    <table id="usersTable">
-      <thead>
-        <tr><th>Name</th><th>Email</th><th>Mobile</th><th>Purok</th><th>Guardian</th><th>Guardian Phone</th><th>Role</th><th>Actions</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <h3 class="muted">Add / Update Grades (admin)</h3>
-    <div class="row">
-      <input id="gStudentEmail" placeholder="Student email (student@example.com)">
-      <input id="gStudentName" placeholder="Student name (optional)">
-      <select id="gLevel" class="small">
-        <option value="">Level</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
-        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-      </select>
-      <select id="gSection" class="small">
-        <option value="">Section</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-      </select>
-    </div>
-    <div class="row">
-      <input id="gSubject" placeholder="Subject">
-      <input id="gGrade" type="number" placeholder="Grade (0-100)" class="small">
-      <button onclick="adminAddOrUpdateGrade()">Add / Update Grade</button>
-    </div>
-
-  </div>
-
-  <!-- STUDENT PANEL -->
-  <div id="studentPanel" class="card hidden">
-    <h2>Your Grades</h2>
-    <table id="studentGradesTable">
-      <thead><tr><th>Subject</th><th>Level</th><th>Section</th><th>Grade</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- COMMON: grades table for admin (shows actions) -->
-  <div id="gradesAllPanel" class="card hidden">
-    <h2>All Grades (Admin)</h2>
-    <table id="gradesAllTable">
-      <thead><tr><th>Student</th><th>Email</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Action</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- PROFILE MODAL AREA (inline panel for editing own info) -->
-  <div id="profilePanel" class="card hidden">
-    <h2>Profile</h2>
-    <label class="muted">Email (cannot change)</label>
-    <input id="profileEmail" readonly>
-    <label>Name</label>
-    <input id="profileName">
-    <label>Mobile Number</label>
-    <input id="profileMobile" placeholder="e.g. 09171234567">
-    <label>Purok</label>
-    <input id="profilePurok">
-    <label>Parent / Guardian</label>
-    <input id="profileGuardian">
-    <label>Parent / Guardian Phone</label>
-    <input id="profileGuardianPhone">
-    <div class="row">
-      <button onclick="saveMyProfile()">Save My Profile</button>
-      <button onclick="closeProfile()">Close</button>
-    </div>
-  </div>
-
-</div>
-
-<script type="module">
-/* =========================
-   Firebase & app logic
-   ========================= */
-/* Imports */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-
-/* -------- REPLACE WITH YOUR FIREBASE CONFIG -------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
-  authDomain: "test-9c727.firebaseapp.com",
-  projectId: "test-9c727",
-  storageBucket: "test-9c727.firebasestorage.app",
-  messagingSenderId: "198578631587",
-  appId: "1:198578631587:web:c0831122f964d46149e016"
-};
-/* -------------------------------------------------- */
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-/* UI refs */
-const authContainer = document.getElementById('authContainer');
-const signupBox = document.getElementById('signupBox');
-const loginBox = document.getElementById('loginBox');
-const controls = document.getElementById('controls');
-const main = document.getElementById('main');
-const adminPanel = document.getElementById('adminPanel');
-const studentPanel = document.getElementById('studentPanel');
-const gradesAllPanel = document.getElementById('gradesAllPanel');
-const profilePanel = document.getElementById('profilePanel');
-const welcome = document.getElementById('welcome');
-
-/* Small helpers */
-function q(id){ return document.getElementById(id); }
-function showLogin(){ signupBox.classList.add('hidden'); loginBox.classList.remove('hidden'); }
-function showSignup(){ loginBox.classList.add('hidden'); signupBox.classList.remove('hidden'); }
-
-/* Basic phone validation (7-15 digits) */
-function phoneLooksReal(s){
-  if(!s) return false;
-  const digits = s.replace(/\D/g,'');
-  return digits.length >= 7 && digits.length <= 15;
-}
-
-/* -------- AUTH: Signup / Login / Logout -------- */
-window.signup = async ()=>{
-  const name = q('signupName').value.trim();
-  const email = q('signupEmail').value.trim();
-  const pwd = q('signupPassword').value;
-  if(!name || !email || !pwd){ alert('Fill name, email, password'); return; }
-  if(pwd.length < 6){ alert('Password must be at least 6 characters'); return; }
-  try{
-    const userCred = await createUserWithEmailAndPassword(auth, email, pwd);
-    // create users doc with uid id
-    const udoc = doc(db, 'users', userCred.user.uid);
-    await setDoc(udoc, {
-      name: name,
-      email: email,
-      mobile: '',
-      purok: '',
-      guardian: '',
-      guardianPhone: '',
-      level: '7',
-      section: 'A',
-      createdAt: serverTimestamp()
-    });
-    alert('Signup complete — ask admin to promote/change level/section if needed.');
-    q('signupName').value=''; q('signupEmail').value=''; q('signupPassword').value='';
-  }catch(e){
-    alert('Signup error: ' + e.message);
-  }
-};
-
-window.login = async ()=>{
-  const email = q('loginEmail').value.trim();
+q('loginEmail').value.trim();
   const pwd = q('loginPassword').value;
   if(!email || !pwd){ alert('Enter email and password'); return; }
   try{
@@ -499,3 +281,236 @@ document.getElementById('controls').classList.add('hidden');
 </script>
 </body>
   </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DANHS Website</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+</head>
+<body>
+  <!-- Signup Form -->
+  <div id="signup-form">
+    <h2>Sign Up</h2>
+    <input type="text" id="signup-name" placeholder="Full Name" required><br>
+    <input type="email" id="signup-email" placeholder="Email" required><br>
+    <input type="password" id="signup-password" placeholder="Password" required><br>
+    <input type="text" id="signup-number" placeholder="Phone Number" required><br>
+    <input type="text" id="signup-purok" placeholder="Purok" required><br>
+    <input type="text" id="signup-guardian" placeholder="Parent/Guardian" required><br>
+    <input type="text" id="signup-guardian-number" placeholder="Parent/Guardian Phone" required><br>
+    <button onclick="signup()">Sign Up</button>
+    <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+  </div>
+
+  <!-- Login Form -->
+  <div id="login-form" style="display:none;">
+    <h2>Login</h2>
+    <input type="email" id="login-email" placeholder="Email" required><br>
+    <input type="password" id="login-password" placeholder="Password" required><br>
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up here</a></p>
+  </div>
+
+  <!-- Student Panel -->
+  <div id="student-panel" style="display:none;">
+    <h2>Student Panel</h2>
+    <p><b>Your Info</b></p>
+    <div id="student-info"></div>
+    <h3>Your Grades</h3>
+    <ul id="student-grades"></ul>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" style="display:none;">
+    <h2>Admin Panel</h2>
+    <h3>All Students</h3>
+    <ul id="all-students"></ul>
+    <h3>Add Grade</h3>
+    <input type="text" id="grade-student-id" placeholder="Student UID"><br>
+    <input type="text" id="grade-subject" placeholder="Subject"><br>
+    <input type="text" id="grade-score" placeholder="Score"><br>
+    <button onclick="addGrade()">Add Grade</button>
+    <h3>Delete Grade</h3>
+    <input type="text" id="delete-student-id" placeholder="Student UID"><br>
+    <input type="text" id="delete-subject" placeholder="Subject"><br>
+    <button onclick="deleteGrade()">Delete Grade</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script type="module">
+    // ✅ Your Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+      authDomain: "test-9c727.firebaseapp.com",
+      projectId: "test-9c727",
+      storageBucket: "test-9c727.firebasestorage.app",
+      messagingSenderId: "198578631587",
+      appId: "1:198578631587:web:c0831122f964d46149e016"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // ✅ Toggle Forms
+    window.showLogin = function () {
+      document.getElementById("signup-form").style.display = "none";
+      document.getElementById("login-form").style.display = "block";
+    };
+
+    window.showSignup = function () {
+      document.getElementById("signup-form").style.display = "block";
+      document.getElementById("login-form").style.display = "none";
+    };
+
+    // ✅ Signup
+    window.signup = function () {
+      const name = document.getElementById("signup-name").value;
+      const email = document.getElementById("signup-email").value;
+      const password = document.getElementById("signup-password").value;
+      const number = document.getElementById("signup-number").value;
+      const purok = document.getElementById("signup-purok").value;
+      const guardian = document.getElementById("signup-guardian").value;
+      const guardianNumber = document.getElementById("signup-guardian-number").value;
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          set(ref(db, "users/" + user.uid), {
+            name: name,
+            email: email,
+            number: number,
+            purok: purok,
+            guardian: guardian,
+            guardianNumber: guardianNumber,
+            role: "student"
+          });
+          alert("Sign up successful!");
+          showLogin();
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    };
+
+    // ✅ Login
+    window.login = function () {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          const dbRef = ref(db);
+          get(child(dbRef, "users/" + user.uid)).then((snapshot) => {
+            if (snapshot.exists()) {
+              const userData = snapshot.val();
+              if (userData.role === "admin") {
+                showAdminPanel();
+              } else {
+                showStudentPanel(user.uid);
+              }
+            }
+          });
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    };
+
+    // ✅ Logout
+    window.logout = function () {
+      signOut(auth).then(() => {
+        alert("Logged out!");
+        location.reload();
+      });
+    };
+
+    // ✅ Student Panel
+    function showStudentPanel(uid) {
+      document.getElementById("signup-form").style.display = "none";
+      document.getElementById("login-form").style.display = "none";
+      document.getElementById("admin-panel").style.display = "none";
+      document.getElementById("student-panel").style.display = "block";
+
+      const dbRef = ref(db);
+      get(child(dbRef, "users/" + uid)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          document.getElementById("student-info").innerHTML = `
+            Name: ${data.name}<br>
+            Email: ${data.email}<br>
+            Phone: ${data.number}<br>
+            Purok: ${data.purok}<br>
+            Guardian: ${data.guardian}<br>
+            Guardian Phone: ${data.guardianNumber}
+          `;
+        }
+      });
+
+      get(child(dbRef, "grades/" + uid)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const grades = snapshot.val();
+          let gradeList = "";
+          for (const subject in grades) {
+            gradeList += `<li>${subject}: ${grades[subject]}</li>`;
+          }
+          document.getElementById("student-grades").innerHTML = gradeList;
+        }
+      });
+    }
+
+    // ✅ Admin Panel
+    function showAdminPanel() {
+      document.getElementById("signup-form").style.display = "none";
+      document.getElementById("login-form").style.display = "none";
+      document.getElementById("student-panel").style.display = "none";
+      document.getElementById("admin-panel").style.display = "block";
+
+      const dbRef = ref(db);
+      get(child(dbRef, "users")).then((snapshot) => {
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          let list = "";
+          for (const uid in users) {
+            list += `<li>${users[uid].name} (${users[uid].email}) - UID: ${uid}</li>`;
+          }
+          document.getElementById("all-students").innerHTML = list;
+        }
+      });
+    }
+
+    // ✅ Add Grade
+    window.addGrade = function () {
+      const uid = document.getElementById("grade-student-id").value;
+      const subject = document.getElementById("grade-subject").value;
+      const score = document.getElementById("grade-score").value;
+
+      update(ref(db, "grades/" + uid), {
+        [subject]: score
+      }).then(() => {
+        alert("Grade added!");
+      });
+    };
+
+    // ✅ Delete Grade
+    window.deleteGrade = function () {
+      const uid = document.getElementById("delete-student-id").value;
+      const subject = document.getElementById("delete-subject").value;
+
+      remove(ref(db, "grades/" + uid + "/" + subject)).then(() => {
+        alert("Grade deleted!");
+      });
+    };
+  </script>
+</body>
+</html>
