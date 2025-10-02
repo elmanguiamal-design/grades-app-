@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>DANHS School Grades</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    input, button { display: block; margin: 5px 0; padding: 8px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-    table { margin-top: 10px; }
-  </style>
+<meta charset="UTF-8">
+<title>DANHS School Grades</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, select, button { display: block; margin: 5px 0; padding: 8px; }
+table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+table { margin-top: 10px; width: 100%; }
+#adminPanel, #gradesContainer, #logoutBtn { display:none; }
+.strength { font-size: 12px; color: red; }
+</style>
 </head>
 <body>
 
@@ -19,6 +21,8 @@
   <h2>Signup</h2>
   <input type="email" id="signupEmail" placeholder="Email">
   <input type="password" id="signupPassword" placeholder="Password">
+  <button type="button" id="togglePassword">Show Password</button>
+  <div class="strength" id="passwordStrength">Password strength: </div>
   <button onclick="signup()">Sign Up</button>
 </div>
 
@@ -27,29 +31,96 @@
   <h2>Login</h2>
   <input type="email" id="loginEmail" placeholder="Email">
   <input type="password" id="loginPassword" placeholder="Password">
+  <button type="button" id="toggleLoginPassword">Show Password</button>
   <button onclick="login()">Login</button>
 </div>
 
+<!-- Logout Button -->
+<button id="logoutBtn">Logout</button>
+
 <hr>
 
-<!-- Main Content (hidden until login) -->
-<div id="mainContent" style="display:none;">
+<!-- Main Content -->
+<div id="mainContent">
 
   <!-- Admin Panel -->
-  <div id="adminPanel" style="display:none;">
+  <div id="adminPanel">
     <h2>Admin Panel</h2>
+
+    <!-- Users Table -->
+    <h3>All Users</h3>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Edit Section</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Filter Grades -->
+    <h3>Filter Grades by Level / Section</h3>
+    <select id="filterLevel" onchange="filterGrades()">
+      <option value="">All Levels</option>
+      <option value="7">7</option><option value="8">8</option>
+      <option value="9">9</option><option value="10">10</option>
+      <option value="11">11</option><option value="12">12</option>
+    </select>
+    <select id="filterSection" onchange="filterGrades()">
+      <option value="">All Sections</option>
+      <option value="A">A</option><option value="B">B</option>
+      <option value="C">C</option><option value="D">D</option>
+    </select>
+
+    <!-- Grades Table -->
+    <h3>Grades</h3>
+    <table id="gradesTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Subject</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Add/Edit Grades -->
+    <h3>Add / Update Grade</h3>
     <input type="text" id="studentName" placeholder="Student Name">
-    <input type="text" id="studentLevel" placeholder="Level">
-    <input type="text" id="studentSection" placeholder="Section">
+    <select id="studentLevelForm">
+      <option value="">Select Level</option>
+      <option value="7">7</option><option value="8">8</option>
+      <option value="9">9</option><option value="10">10</option>
+      <option value="11">11</option><option value="12">12</option>
+    </select>
+    <select id="studentSectionForm">
+      <option value="">Select Section</option>
+      <option value="A">A</option><option value="B">B</option>
+      <option value="C">C</option><option value="D">D</option>
+    </select>
     <input type="text" id="studentSubject" placeholder="Subject">
-    <input type="number" id="studentGrade" placeholder="Grade">
-    <button onclick="addGrade()">Add / Update Grade</button>
+    <input type="number" id="studentGrade" placeholder="Grade (0-100)">
+    <button onclick="addOrUpdateGrade()">Add / Update Grade</button>
+
+    <!-- Create New Admin -->
+    <h3>Create New Admin</h3>
+    <input type="email" id="newAdminEmail" placeholder="Admin Email">
+    <input type="password" id="newAdminPassword" placeholder="Password">
+    <button type="button" id="toggleNewAdminPassword">Show Password</button>
+    <div class="strength" id="newAdminStrength">Password strength: </div>
+    <button onclick="createAdmin()">Create Admin</button>
   </div>
 
-  <!-- Grades Table -->
+  <!-- Grades Table for Students -->
   <div id="gradesContainer">
     <h2>Grades</h2>
-    <table id="gradesTable">
+    <table id="gradesTableStudent">
       <thead>
         <tr>
           <th>Student</th>
@@ -68,7 +139,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
 // --- Firebase config ---
 const firebaseConfig = {
@@ -79,94 +150,203 @@ const firebaseConfig = {
   messagingSenderId: "198578631587",
   appId: "1:198578631587:web:c0831122f964d46149e016"
 };
-
+// ----------------------------------------------
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- Password toggle and strength ---
+const passwordInput = document.getElementById("signupPassword");
+const strengthText = document.getElementById("passwordStrength");
+passwordInput.addEventListener("input", ()=>{
+  strengthText.innerText = passwordInput.value.length >= 6 ? "Password strength: Strong" : "Password strength: Weak";
+});
+document.getElementById("togglePassword").addEventListener("click", ()=>{
+  passwordInput.type = passwordInput.type==="password"?"text":"password";
+});
+document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
+  const loginPass = document.getElementById("loginPassword");
+  loginPass.type = loginPass.type==="password"?"text":"password";
+});
+const newAdminPass = document.getElementById("newAdminPassword");
+const newAdminStrength = document.getElementById("newAdminStrength");
+newAdminPass.addEventListener("input", ()=>{
+  newAdminStrength.innerText = newAdminPass.value.length>=6 ? "Password strength: Strong" : "Password strength: Weak";
+});
+document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>{
+  newAdminPass.type = newAdminPass.type==="password"?"text":"password";
+});
+
 // --- Signup ---
-window.signup = () => {
+window.signup = async ()=>{
   const email = document.getElementById("signupEmail").value;
-  const password = document.getElementById("signupPassword").value;
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(() => {
-      alert("Signup successful");
-      document.getElementById("signupDiv").style.display = "none";
-      document.getElementById("loginDiv").style.display = "none";
-    })
-    .catch(err => alert(err.message));
+  const password = passwordInput.value;
+  if(password.length < 6){ alert("Password too short"); return; }
+  try{
+    await createUserWithEmailAndPassword(auth,email,password);
+    await addDoc(collection(db,"users"),{email, level:"7", section:"A"});
+    alert("Signup successful! Ask admin to update level/section.");
+  }catch(err){ alert("Firebase error: "+err.message); }
 }
 
 // --- Login ---
-window.login = () => {
+window.login = async ()=>{
   const email = document.getElementById("loginEmail").value;
   const password = document.getElementById("loginPassword").value;
-  signInWithEmailAndPassword(auth, email, password)
-    .then(() => {
-      alert("Login successful");
-      document.getElementById("signupDiv").style.display = "none";
-      document.getElementById("loginDiv").style.display = "none";
-    })
-    .catch(err => alert(err.message));
+  try{
+    await signInWithEmailAndPassword(auth,email,password);
+  }catch(err){ alert("Firebase error: "+err.message); }
 }
 
-// --- Show main content only after login ---
-onAuthStateChanged(auth, user => {
+// --- Logout ---
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  await auth.signOut();
+  location.reload();
+});
+
+// --- Auth state ---
+onAuthStateChanged(auth,user=>{
   if(user){
-    document.getElementById("mainContent").style.display = "block";
+    document.getElementById("signupDiv").style.display="none";
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("logoutBtn").style.display="block";
+    document.getElementById("mainContent").style.display="block";
 
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", user.email));
-    getDocs(q).then(snapshot => {
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if(data.level === "admin"){
-          document.getElementById("adminPanel").style.display = "block";
-        }
-        loadGrades(data.level, data.section); // student sees only their section
-      });
-    });
-
-    // Hide login/signup forms
-    document.getElementById("signupDiv").style.display = "none";
-    document.getElementById("loginDiv").style.display = "none";
-
-  } else {
-    // logged out → hide everything
-    document.getElementById("mainContent").style.display = "none";
-    document.getElementById("adminPanel").style.display = "none";
-    document.getElementById("signupDiv").style.display = "block";
-    document.getElementById("loginDiv").style.display = "block";
+    checkAdmin(user.email);
+  }else{
+    document.getElementById("signupDiv").style.display="block";
+    document.getElementById("loginDiv").style.display="block";
+    document.getElementById("gradesContainer").style.display="none";
+    document.getElementById("adminPanel").style.display="none";
+    document.getElementById("logoutBtn").style.display="none";
+    document.getElementById("mainContent").style.display="none";
   }
 });
 
-// --- Add/Update Grade (Admin only) ---
-window.addGrade = async () => {
-  const name = document.getElementById("studentName").value;
-  const level = document.getElementById("studentLevel").value;
-  const section = document.getElementById("studentSection").value;
-  const subject = document.getElementById("studentSubject").value;
-  const grade = document.getElementById("studentGrade").value;
-
-  await addDoc(collection(db, "grades"), { student:name, level, section, subject, grade });
-  alert("Grade added!");
-  loadGrades(level, section);
-}
-
-// --- Load Grades for current user ---
-async function loadGrades(userLevel, userSection){
-  const gradesTable = document.querySelector("#gradesTable tbody");
-  gradesTable.innerHTML = "";
-  const gradesRef = collection(db, "grades");
-  const q = query(gradesRef, where("level", "==", userLevel), where("section", "==", userSection));
+// --- Check admin ---
+async function checkAdmin(email){
+  const usersRef = collection(db,"users");
+  const q = query(usersRef, where("email","==",email));
   const snapshot = await getDocs(q);
-  snapshot.forEach(doc => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${doc.data().student}</td><td>${doc.data().level}</td><td>${doc.data().section}</td><td>${doc.data().subject}</td><td>${doc.data().grade}</td>`;
-    gradesTable.appendChild(tr);
+  snapshot.forEach(docu=>{
+    const data = docu.data();
+    if(data.level==="admin"){
+      document.getElementById("adminPanel").style.display="block";
+      loadUsers();
+      filterGrades(); // show all grades by default
+    } else {
+      document.getElementById("gradesContainer").style.display="block";
+      loadGrades(data.level,data.section);
+    }
   });
 }
-</script>
 
+// --- Load users ---
+async function loadUsers(){
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML="";
+  const snapshot = await getDocs(collection(db,"users"));
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${data.email}</td><td>${data.level}</td>
+      <td>${data.section}</td>
+      <td><input value="${data.section}" onchange="editSection('${doc.id}',this.value)"></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// --- Edit section ---
+window.editSection = async (id,newSection)=>{
+  await updateDoc(doc(db,"users",id),{section:newSection});
+  alert("Section updated!");
+  filterGrades();
+}
+
+// --- Load grades for students ---
+async function loadGrades(level,section){
+  const tbody = document.querySelector("#gradesTableStudent tbody");
+  tbody.innerHTML="";
+  const q = query(collection(db,"grades"),where("level","==",level),where("section","==",section));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// --- Filter grades for admin ---
+window.filterGrades = async () => {
+  const level = document.getElementById("filterLevel").value;
+  const section = document.getElementById("filterSection").value;
+  const tbody = document.querySelector("#gradesTable tbody");
+  tbody.innerHTML = "";
+
+  let q;
+  if(level && section){
+    q = query(collection(db,"grades"), where("level","==",level), where("section","==",section));
+  } else if(level){
+    q = query(collection(db,"grades"), where("level","==",level));
+  } else {
+    q = collection(db,"grades");
+  }
+
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// --- Add/Update grade ---
+window.addOrUpdateGrade = async () => {
+  const name = document.getElementById("studentName").value.trim();
+  const level = document.getElementById("studentLevelForm").value;
+  const section = document.getElementById("studentSectionForm").value;
+  const subject = document.getElementById("studentSubject").value.trim();
+  const grade = parseFloat(document.getElementById("studentGrade").value);
+
+  if(!name || !level || !section || !subject || isNaN(grade) || grade<0 || grade>100){
+    alert("Please fill all fields correctly. Grade must be 0-100.");
+    return;
+  }
+
+  const gradesRef = collection(db,"grades");
+  const q = query(gradesRef, where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
+  const snapshot = await getDocs(q);
+
+  if(!snapshot.empty){
+    snapshot.forEach(async docu=>{
+      await updateDoc(doc(db,"grades",docu.id),{grade});
+    });
+    alert("Grade updated!");
+  } else {
+    await addDoc(gradesRef,{student:name,level,section,subject,grade});
+    alert("Grade added!");
+  }
+
+  filterGrades();
+}
+
+// --- Create admin ---
+window.createAdmin = async ()=>{
+  const email = document.getElementById("newAdminEmail").value;
+  const password = newAdminPass.value;
+  if(password.length<6){ alert("Password too short"); return; }
+  try{
+    await createUserWithEmailAndPassword(auth,email,password);
+    await addDoc(collection(db,"users"),{email,level:"admin",section:""});
+    alert("New admin created successfully!");
+    document.getElementById("newAdminEmail").value="";
+    newAdminPass.value="";
+    newAdminStrength.innerText="Password strength:";
+    loadUsers();
+  }catch(err){ alert("Firebase error: "+err.message); }
+}
+</script>
 </body>
-</html>
+  </html>
