@@ -10,6 +10,7 @@ table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px
 table { margin-top: 10px; width: 100%; }
 #adminPanel, #gradesContainer, #logoutBtn { display:none; }
 .strength { font-size: 12px; color: red; }
+button.deleteBtn { color: red; }
 </style>
 </head>
 <body>
@@ -20,6 +21,7 @@ table { margin-top: 10px; width: 100%; }
 <!-- Signup Form -->
 <div id="signupDiv">
   <h2>Signup</h2>
+  <input type="text" id="signupName" placeholder="Full Name">
   <input type="email" id="signupEmail" placeholder="Email">
   <input type="password" id="signupPassword" placeholder="Password">
   <button type="button" id="togglePassword">Show Password</button>
@@ -53,6 +55,7 @@ table { margin-top: 10px; width: 100%; }
     <table id="usersTable">
       <thead>
         <tr>
+          <th>Name</th>
           <th>Email</th>
           <th>Level</th>
           <th>Section</th>
@@ -73,7 +76,8 @@ table { margin-top: 10px; width: 100%; }
     <select id="filterSection" onchange="filterGrades()">
       <option value="">All Sections</option>
       <option value="A">A</option><option value="B">B</option>
-      <option value="C">C</option><option value="D">D</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
     </select>
 
     <!-- Grades Table -->
@@ -82,10 +86,12 @@ table { margin-top: 10px; width: 100%; }
       <thead>
         <tr>
           <th>Student</th>
+          <th>Email</th>
           <th>Level</th>
           <th>Section</th>
           <th>Subject</th>
           <th>Grade</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -94,11 +100,13 @@ table { margin-top: 10px; width: 100%; }
     <!-- Add/Edit Grades -->
     <h3>Add / Update Grade</h3>
     <input type="text" id="studentName" placeholder="Student Name">
+    <input type="email" id="studentEmail" placeholder="Student Email">
     <select id="studentLevelForm">
       <option value="">Select Level</option>
       <option value="7">7</option><option value="8">8</option>
       <option value="9">9</option><option value="10">10</option>
-      <option value="11">11</option><option value="12">12</option>
+      <option value="11">11</option>
+      <option value="12">12</option>
     </select>
     <select id="studentSectionForm">
       <option value="">Select Section</option>
@@ -126,6 +134,7 @@ table { margin-top: 10px; width: 100%; }
       <thead>
         <tr>
           <th>Student</th>
+          <th>Email</th>
           <th>Level</th>
           <th>Section</th>
           <th>Subject</th>
@@ -141,9 +150,9 @@ table { margin-top: 10px; width: 100%; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Firebase config
+// --- Firebase Config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -157,15 +166,12 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- Password toggle & strength ---
+// --- Password Toggle & Strength ---
 const passwordInput = document.getElementById("signupPassword");
 const strengthText = document.getElementById("passwordStrength");
 passwordInput.addEventListener("input", ()=>{strengthText.innerText = passwordInput.value.length>=6?"Password strength: Strong":"Password strength: Weak";});
 document.getElementById("togglePassword").addEventListener("click", ()=>{passwordInput.type=passwordInput.type==="password"?"text":"password";});
-document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
-  const loginPass = document.getElementById("loginPassword");
-  loginPass.type=loginPass.type==="password"?"text":"password";
-});
+document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{document.getElementById("loginPassword").type=document.getElementById("loginPassword").type==="password"?"text":"password";});
 const newAdminPass = document.getElementById("newAdminPassword");
 const newAdminStrength = document.getElementById("newAdminStrength");
 newAdminPass.addEventListener("input", ()=>{newAdminStrength.innerText=newAdminPass.value.length>=6?"Password strength: Strong":"Password strength: Weak";});
@@ -173,12 +179,14 @@ document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>
 
 // --- Signup ---
 window.signup = async ()=>{
+  const name = document.getElementById("signupName").value;
   const email = document.getElementById("signupEmail").value;
   const password = passwordInput.value;
-  if(password.length<6){alert("Password too short");return;}
+  if(!name){alert("Please enter your name"); return;}
+  if(password.length<6){alert("Password too short"); return;}
   try{
     await createUserWithEmailAndPassword(auth,email,password);
-    await addDoc(collection(db,"users"),{email,level:"7",section:"A"});
+    await addDoc(collection(db,"users"), { name, email, level:"7", section:"A" });
     alert("Signup successful! Ask admin to update level/section.");
   }catch(err){alert("Firebase error: "+err.message);}
 }
@@ -196,46 +204,45 @@ document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   location.reload();
 });
 
-// --- Auth state ---
-onAuthStateChanged(auth,user=>{
+// --- Auth State Listener ---
+onAuthStateChanged(auth, async user=>{
   if(user){
     document.getElementById("signupDiv").style.display="none";
     document.getElementById("loginDiv").style.display="none";
     document.getElementById("logoutBtn").style.display="block";
     document.getElementById("mainContent").style.display="block";
-    checkAdmin(user.email);
-  }else{
+    checkAdminOrStudent(user.email);
+  } else {
     document.getElementById("signupDiv").style.display="block";
     document.getElementById("loginDiv").style.display="block";
     document.getElementById("gradesContainer").style.display="none";
     document.getElementById("adminPanel").style.display="none";
     document.getElementById("logoutBtn").style.display="none";
-    document.getElementById("mainContent").style.display="none";
-    document.getElementById("welcomeUser").innerText="";
   }
 });
 
-// --- Check admin & welcome message ---
-async function checkAdmin(email){
-  const q = query(collection(db,"users"), where("email","==",email));
+// --- Role Check ---
+async function checkAdminOrStudent(email){
+  const usersRef = collection(db,"users");
+  const q = query(usersRef, where("email","==",email));
   const snapshot = await getDocs(q);
   snapshot.forEach(docu=>{
     const data = docu.data();
-    const welcomeDiv = document.getElementById("welcomeUser");
+    document.getElementById("welcomeUser").innerText = `Welcome ${data.name} (${data.level==="admin"?"Admin":"Student"})`;
     if(data.level==="admin"){
       document.getElementById("adminPanel").style.display="block";
-      loadUsers();
-      filterGrades();
-      welcomeDiv.innerText=`Welcome Admin: ${email}`;
-    }else{
       document.getElementById("gradesContainer").style.display="block";
-      loadGrades(data.level,data.section);
-      welcomeDiv.innerText=`Welcome Student: ${email} (Level ${data.level}, Section ${data.section})`;
+      loadUsers();
+      loadGradesAll();
+    } else {
+      document.getElementById("gradesContainer").style.display="block";
+      document.getElementById("adminPanel").style.display="none";
+      loadGradesStudent(data.email);
     }
   });
 }
 
-// --- Load users ---
+// --- Load Users ---
 async function loadUsers(){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML="";
@@ -243,82 +250,63 @@ async function loadUsers(){
   snapshot.forEach(doc=>{
     const data = doc.data();
     const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${data.email}</td><td>${data.level}</td><td>${data.section}</td>
-      <td><input value="${data.section}" onchange="editSection('${doc.id}',this.value)"></td>`;
+    tr.innerHTML = `<td>${data.name}</td><td>${data.email}</td><td>${data.level}</td>
+                    <td>${data.section}</td>
+                    <td><input value="${data.section}" onchange="editSection('${doc.id}',this.value)"></td>`;
     tbody.appendChild(tr);
   });
 }
 
-// --- Edit section ---
+// --- Edit Section ---
 window.editSection = async (id,newSection)=>{
   await updateDoc(doc(db,"users",id),{section:newSection});
   alert("Section updated!");
-  filterGrades();
+  loadGradesAll();
 }
 
-// --- Load grades ---
+// --- Load All Grades ---
 async function loadGradesAll(){
   const tbody = document.querySelector("#gradesTable tbody");
   tbody.innerHTML="";
   const snapshot = await getDocs(collection(db,"grades"));
   snapshot.forEach(doc=>{
-    const d = doc.data();
+    const d=doc.data();
     const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
+    tr.innerHTML=`<td>${d.student}</td><td>${d.studentEmail}</td><td>${d.level}</td><td>${d.section}</td>
+                  <td>${d.subject}</td><td>${d.grade}</td>
+                  <td><button class="deleteBtn" onclick="deleteGrade('${doc.id}')">Delete</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
-async function loadGrades(level,section){
+// --- Load Grades for Student ---
+async function loadGradesStudent(email){
   const tbody = document.querySelector("#gradesTableStudent tbody");
   tbody.innerHTML="";
-  const q = query(collection(db,"grades"),where("level","==",level),where("section","==",section));
+  const q = query(collection(db,"grades"), where("studentEmail","==",email));
   const snapshot = await getDocs(q);
   snapshot.forEach(doc=>{
     const d=doc.data();
     const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
+    tr.innerHTML=`<td>${d.student}</td><td>${d.studentEmail}</td><td>${d.level}</td><td>${d.section}</td>
+                  <td>${d.subject}</td><td>${d.grade}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-// --- Filter grades for admin ---
-window.filterGrades = async ()=>{
-  const level = document.getElementById("filterLevel").value;
-  const section = document.getElementById("filterSection").value;
-  const tbody = document.querySelector("#gradesTable tbody");
-  tbody.innerHTML="";
-  let q = collection(db,"grades");
-  let snapshot;
-  if(level && section){
-    snapshot = await getDocs(query(q,where("level","==",level),where("section","==",section)));
-  } else if(level){
-    snapshot = await getDocs(query(q,where("level","==",level)));
-  } else if(section){
-    snapshot = await getDocs(query(q,where("section","==",section)));
-  } else {
-    snapshot = await getDocs(q);
-  }
-  snapshot.forEach(doc=>{
-    const d = doc.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-// --- Add or update grades ---
+// --- Add or Update Grades ---
 window.addOrUpdateGrade = async ()=>{
   const name = document.getElementById("studentName").value;
+  const email = document.getElementById("studentEmail").value;
   const level = document.getElementById("studentLevelForm").value;
   const section = document.getElementById("studentSectionForm").value;
   const subject = document.getElementById("studentSubject").value;
   const grade = document.getElementById("studentGrade").value;
 
-  if(!name||!level||!section||!subject||!grade){alert("Please fill all fields"); return;}
+  if(!name || !email || !level || !section || !subject || grade===""){ alert("Please fill all fields"); return; }
 
   const gradesRef = collection(db,"grades");
-  const q = query(gradesRef, where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
+  const q = query(gradesRef, where("student","==",name), where("studentEmail","==",email), where("subject","==",subject), where("level","==",level), where("section","==",section));
   const snapshot = await getDocs(q);
 
   if(!snapshot.empty){
@@ -327,27 +315,59 @@ window.addOrUpdateGrade = async ()=>{
     });
     alert("Grade updated!");
   } else {
-    await addDoc(gradesRef,{student:name,level,section,subject,grade});
+    await addDoc(gradesRef,{student:name,studentEmail:email,level,section,subject,grade});
     alert("Grade added!");
   }
+
+  loadGradesAll();
   filterGrades();
 }
 
-// --- Create admin account ---
+// --- Delete Grade ---
+window.deleteGrade = async (id)=>{
+  if(confirm("Are you sure you want to delete this grade?")){
+    await deleteDoc(doc(db,"grades",id));
+    alert("Grade deleted!");
+    loadGradesAll();
+    filterGrades();
+  }
+}
+
+// --- Create Admin ---
 window.createAdmin = async ()=>{
   const email = document.getElementById("newAdminEmail").value;
   const password = newAdminPass.value;
   if(password.length<6){ alert("Password too short"); return; }
   try{
     await createUserWithEmailAndPassword(auth,email,password);
-    await addDoc(collection(db,"users"),{email,level:"admin",section:""});
-    alert("New admin created successfully!");
+    await addDoc(collection(db,"users"),{email,level:"admin",section:"",name:"Admin"});
+    alert("New admin created!");
     document.getElementById("newAdminEmail").value="";
     newAdminPass.value="";
     newAdminStrength.innerText="Password strength:";
     loadUsers();
   }catch(err){ alert("Firebase error: "+err.message); }
 }
+
+// --- Filter Grades ---
+window.filterGrades = async ()=>{
+  const levelFilter = document.getElementById("filterLevel").value;
+  const sectionFilter = document.getElementById("filterSection").value;
+  const tbody = document.querySelector("#gradesTable tbody");
+  tbody.innerHTML="";
+  const snapshot = await getDocs(collection(db,"grades"));
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    if((!levelFilter || d.level===levelFilter) && (!sectionFilter || d.section===sectionFilter)){
+      const tr = document.createElement("tr");
+      tr.innerHTML=`<td>${d.student}</td><td>${d.studentEmail}</td><td>${d.level}</td><td>${d.section}</td>
+                    <td>${d.subject}</td><td>${d.grade}</td>
+                    <td><button class="deleteBtn" onclick="deleteGrade('${doc.id}')">Delete</button></td>`;
+      tbody.appendChild(tr);
+    }
+  });
+}
+
 </script>
 </body>
-</html>
+      </html>
