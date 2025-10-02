@@ -4,13 +4,12 @@
 <meta charset="UTF-8">
 <title>DANHS School Grades</title>
 <style>
-body { font-family: Arial; padding: 20px; background:#f9f9f9; }
+body { font-family: Arial; padding: 20px; }
 input, select, button { display: block; margin: 5px 0; padding: 8px; }
 table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-table { margin-top: 10px; width: 100%; background:white; }
-#adminPanel, #gradesContainer, #logoutBtn, #profileBtn, #profileDiv { display:none; }
+table { margin-top: 10px; width: 100%; }
+#adminPanel, #gradesContainer, #logoutBtn { display:none; }
 .strength { font-size: 12px; color: red; }
-.modal { background:white; border:1px solid #ccc; padding:20px; border-radius:8px; width:300px; }
 </style>
 </head>
 <body>
@@ -20,7 +19,6 @@ table { margin-top: 10px; width: 100%; background:white; }
 <!-- Signup Form -->
 <div id="signupDiv">
   <h2>Signup</h2>
-  <input type="text" id="signupName" placeholder="Full Name">
   <input type="email" id="signupEmail" placeholder="Email">
   <input type="password" id="signupPassword" placeholder="Password">
   <button type="button" id="togglePassword">Show Password</button>
@@ -37,47 +35,25 @@ table { margin-top: 10px; width: 100%; background:white; }
   <button onclick="login()">Login</button>
 </div>
 
-<!-- Logout + Profile Buttons -->
+<!-- Logout Button -->
 <button id="logoutBtn">Logout</button>
-<button id="profileBtn">Profile</button>
 
 <hr>
 
-<!-- Profile Modal -->
-<div id="profileDiv" class="modal">
-  <h2>My Profile</h2>
-  <label>Name</label>
-  <input type="text" id="profileName">
-  
-  <label>Email (readonly)</label>
-  <input type="email" id="profileEmail" readonly>
-  
-  <label>Mobile Number</label>
-  <input type="text" id="profileNumber">
-  
-  <label>Purok</label>
-  <input type="text" id="profilePurok">
-  
-  <label>Parent/Guardian Name</label>
-  <input type="text" id="profileGuardian">
-  
-  <label>Parent/Guardian Phone</label>
-  <input type="text" id="profileGuardianPhone">
-
-  <button onclick="saveProfile()">Save Profile</button>
-  <button onclick="document.getElementById('profileDiv').style.display='none'">Close</button>
-</div>
-
 <!-- Main Content -->
 <div id="mainContent">
+
   <!-- Admin Panel -->
   <div id="adminPanel">
     <h2>Admin Panel</h2>
+    
+    <!-- Users Table -->
     <h3>All Users</h3>
     <table id="usersTable">
       <thead>
         <tr>
-          <th>Name</th><th>Email</th><th>Mobile</th><th>Purok</th><th>Guardian</th><th>Guardian Phone</th><th>Edit</th>
+          <th>Name</th><th>Email</th><th>Number</th><th>Purok</th>
+          <th>Guardian</th><th>Guardian Phone</th><th>Actions</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -108,20 +84,31 @@ table { margin-top: 10px; width: 100%; background:white; }
     <table id="gradesTable">
       <thead>
         <tr>
-          <th>Student</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th>
+          <th>Student</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Action</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
+
+  <!-- Profile Settings -->
+  <div id="profileSettings" style="display:none;">
+    <h2>My Information</h2>
+    <input type="text" id="profileName" placeholder="Full Name">
+    <input type="text" id="profileNumber" placeholder="Mobile Number">
+    <input type="text" id="profilePurok" placeholder="Purok">
+    <input type="text" id="profileGuardian" placeholder="Parent/Guardian Name">
+    <input type="text" id="profileGuardianPhone" placeholder="Parent/Guardian Phone">
+    <button onclick="saveProfile()">Save Information</button>
+  </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -130,38 +117,30 @@ const firebaseConfig = {
   messagingSenderId: "198578631587",
   appId: "1:198578631587:web:c0831122f964d46149e016"
 };
-// ------------------------
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- Password toggle & strength ---
-const passwordInput = document.getElementById("signupPassword");
-const strengthText = document.getElementById("passwordStrength");
-passwordInput.addEventListener("input", ()=>{
-  strengthText.innerText = passwordInput.value.length >= 6 ? "Password strength: Strong" : "Password strength: Weak";
-});
-document.getElementById("togglePassword").addEventListener("click", ()=>{
-  passwordInput.type = passwordInput.type==="password"?"text":"password";
-});
-document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
-  const loginPass = document.getElementById("loginPassword");
-  loginPass.type = loginPass.type==="password"?"text":"password";
-});
-
 // --- Signup ---
 window.signup = async ()=>{
-  const name = document.getElementById("signupName").value;
   const email = document.getElementById("signupEmail").value;
-  const password = passwordInput.value;
+  const password = document.getElementById("signupPassword").value;
   if(password.length < 6){ alert("Password too short"); return; }
   try{
-    const cred = await createUserWithEmailAndPassword(auth,email,password);
-    await setDoc(doc(db,"users",cred.user.uid),{
-      name, email, mobile:"", purok:"", guardian:"", guardianPhone:"", level:"7", section:"A"
+    const userCred = await createUserWithEmailAndPassword(auth,email,password);
+    await setDoc(doc(db,"users",userCred.user.uid),{
+      email,
+      level:"7",
+      section:"A",
+      name:"",
+      mobile:"",
+      purok:"",
+      guardian:"",
+      guardianPhone:""
     });
-    alert("Signup successful! Ask admin to update level/section.");
-  }catch(err){ alert("Firebase error: "+err.message); }
+    alert("Signup successful!");
+  }catch(err){ alert("Error: "+err.message); }
 }
 
 // --- Login ---
@@ -170,7 +149,7 @@ window.login = async ()=>{
   const password = document.getElementById("loginPassword").value;
   try{
     await signInWithEmailAndPassword(auth,email,password);
-  }catch(err){ alert("Firebase error: "+err.message); }
+  }catch(err){ alert("Error: "+err.message); }
 }
 
 // --- Logout ---
@@ -179,75 +158,40 @@ document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   location.reload();
 });
 
-// --- Auth state listener ---
-onAuthStateChanged(auth, async user=>{
+// --- Auth State ---
+onAuthStateChanged(auth, async (user)=>{
   if(user){
     document.getElementById("signupDiv").style.display="none";
     document.getElementById("loginDiv").style.display="none";
     document.getElementById("logoutBtn").style.display="block";
-    document.getElementById("profileBtn").style.display="block";
     document.getElementById("mainContent").style.display="block";
-
-    const userDoc = await getDocs(query(collection(db,"users"),where("email","==",user.email)));
-    let userData = null, id="";
-    userDoc.forEach(d=>{ userData=d.data(); id=d.id; });
-
-    if(userData && userData.level==="admin"){
-      document.getElementById("adminPanel").style.display="block";
-      loadUsers();
-      loadGradesAll();
-    } else if(userData){
-      loadGrades(userData.level,userData.section);
-    }
-  } else {
+    document.getElementById("profileSettings").style.display="block";
+    checkAdmin(user.uid);
+  }else{
     document.getElementById("signupDiv").style.display="block";
     document.getElementById("loginDiv").style.display="block";
-    document.getElementById("gradesContainer").style.display="none";
-    document.getElementById("adminPanel").style.display="none";
     document.getElementById("logoutBtn").style.display="none";
-    document.getElementById("profileBtn").style.display="none";
     document.getElementById("mainContent").style.display="none";
   }
 });
 
-// --- Profile open/save ---
-document.getElementById("profileBtn").addEventListener("click", async ()=>{
-  document.getElementById("profileDiv").style.display="block";
-  const user = auth.currentUser;
-  if(user){
-    const q = query(collection(db,"users"),where("email","==",user.email));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(d=>{
-      const data = d.data();
-      document.getElementById("profileName").value = data.name||"";
-      document.getElementById("profileEmail").value = data.email||"";
-      document.getElementById("profileNumber").value = data.mobile||"";
-      document.getElementById("profilePurok").value = data.purok||"";
-      document.getElementById("profileGuardian").value = data.guardian||"";
-      document.getElementById("profileGuardianPhone").value = data.guardianPhone||"";
-    });
-  }
-});
-
-window.saveProfile = async ()=>{
-  const user = auth.currentUser;
-  if(!user) return;
-  const q = query(collection(db,"users"),where("email","==",user.email));
-  const snapshot = await getDocs(q);
-  snapshot.forEach(async d=>{
-    await updateDoc(doc(db,"users",d.id),{
-      name: document.getElementById("profileName").value,
-      mobile: document.getElementById("profileNumber").value,
-      purok: document.getElementById("profilePurok").value,
-      guardian: document.getElementById("profileGuardian").value,
-      guardianPhone: document.getElementById("profileGuardianPhone").value
-    });
+// --- Check Admin ---
+async function checkAdmin(uid){
+  const docu = await getDocs(query(collection(db,"users"), where("__name__","==",uid)));
+  docu.forEach(async snap=>{
+    const data = snap.data();
+    if(data.level==="admin"){
+      document.getElementById("adminPanel").style.display="block";
+      loadUsers();
+      loadGradesAll();
+    } else {
+      loadGrades(data.level,data.section);
+    }
+    loadProfile(uid,data);
   });
-  alert("Profile saved!");
-  document.getElementById("profileDiv").style.display="none";
 }
 
-// --- Load users (for admin) ---
+// --- Load Users ---
 async function loadUsers(){
   const tbody = document.querySelector("#usersTable tbody");
   tbody.innerHTML="";
@@ -262,34 +206,36 @@ async function loadUsers(){
       <td>${data.purok||""}</td>
       <td>${data.guardian||""}</td>
       <td>${data.guardianPhone||""}</td>
-      <td><button onclick="editUser('${d.id}')">Edit</button></td>`;
+      <td><button onclick="makeAdmin('${d.id}')">Make Admin</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
-// --- Edit user info (admin) ---
-window.editUser = async (id)=>{
-  const name = prompt("Enter new name");
-  const mobile = prompt("Enter new mobile");
-  await updateDoc(doc(db,"users",id),{name,mobile});
-  alert("User updated");
+// --- Make Admin ---
+window.makeAdmin = async (id)=>{
+  await updateDoc(doc(db,"users",id), { level: "admin" });
+  alert("User promoted to Admin!");
   loadUsers();
 }
 
-// --- Grades ---
+// --- Load Grades ---
 async function loadGradesAll(){
+  document.getElementById("gradesContainer").style.display="block";
   const tbody = document.querySelector("#gradesTable tbody");
   tbody.innerHTML="";
   const snapshot = await getDocs(collection(db,"grades"));
   snapshot.forEach(doc=>{
     const d=doc.data();
     const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
+    tr.innerHTML=`
+      <td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>
+      <td><button onclick="deleteGrade('${doc.id}')">Delete</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
 async function loadGrades(level,section){
+  document.getElementById("gradesContainer").style.display="block";
   const tbody = document.querySelector("#gradesTable tbody");
   tbody.innerHTML="";
   const q = query(collection(db,"grades"),where("level","==",level),where("section","==",section));
@@ -309,22 +255,48 @@ window.addOrUpdateGrade = async ()=>{
   const section = document.getElementById("studentSection").value;
   const subject = document.getElementById("studentSubject").value;
   const grade = document.getElementById("studentGrade").value;
-
-  const gradesRef = collection(db,"grades");
-  const q = query(gradesRef, where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
+  const q = query(collection(db,"grades"), where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
   const snapshot = await getDocs(q);
-
   if(!snapshot.empty){
     snapshot.forEach(async docu=>{
       await updateDoc(doc(db,"grades",docu.id),{grade});
     });
     alert("Grade updated!");
   } else {
-    await addDoc(gradesRef,{student:name,level,section,subject,grade});
+    await addDoc(collection(db,"grades"),{student:name,level,section,subject,grade});
     alert("Grade added!");
   }
   loadGradesAll();
 }
+
+// --- Delete Grade ---
+window.deleteGrade = async (id)=>{
+  await deleteDoc(doc(db,"grades",id));
+  alert("Grade deleted!");
+  loadGradesAll();
+}
+
+// --- Profile ---
+function loadProfile(uid,data){
+  document.getElementById("profileName").value = data.name||"";
+  document.getElementById("profileNumber").value = data.mobile||"";
+  document.getElementById("profilePurok").value = data.purok||"";
+  document.getElementById("profileGuardian").value = data.guardian||"";
+  document.getElementById("profileGuardianPhone").value = data.guardianPhone||"";
+}
+
+window.saveProfile = async ()=>{
+  const user = auth.currentUser;
+  if(!user) return;
+  await updateDoc(doc(db,"users",user.uid),{
+    name: document.getElementById("profileName").value,
+    mobile: document.getElementById("profileNumber").value,
+    purok: document.getElementById("profilePurok").value,
+    guardian: document.getElementById("profileGuardian").value,
+    guardianPhone: document.getElementById("profileGuardianPhone").value
+  });
+  alert("Profile updated!");
+}
 </script>
 </body>
-  </html>
+                            </html>
