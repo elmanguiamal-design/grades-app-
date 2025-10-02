@@ -1,83 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>DANHS School Grades</title>
-<style>
-body { font-family: Arial; padding: 20px; }
-input, select, button { display: block; margin: 5px 0; padding: 8px; }
-table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-table { margin-top: 10px; width: 100%; }
-#adminPanel, #gradesContainer, #logoutBtn { display:none; }
-.strength { font-size: 12px; color: red; }
-</style>
-</head>
-<body>
-
-<h1>DANHS School Grades</h1>
-
-<!-- Signup Form -->
-<div id="signupDiv">
-  <h2>Signup</h2>
-  <input type="email" id="signupEmail" placeholder="Email">
-  <input type="password" id="signupPassword" placeholder="Password">
-  <button type="button" id="togglePassword">Show Password</button>
-  <div class="strength" id="passwordStrength">Password strength: </div>
-  <button onclick="signup()">Sign Up</button>
-</div>
-
-<!-- Login Form -->
-<div id="loginDiv">
-  <h2>Login</h2>
-  <input type="email" id="loginEmail" placeholder="Email">
-  <input type="password" id="loginPassword" placeholder="Password">
-  <button type="button" id="toggleLoginPassword">Show Password</button>
-  <button onclick="login()">Login</button>
-</div>
-
-<!-- Logout Button -->
-<button id="logoutBtn">Logout</button>
-
-<hr>
-
-<!-- Main Content -->
-<div id="mainContent">
-
-  <!-- Admin Panel -->
-  <div id="adminPanel">
-    <h2>Admin Panel</h2>
-
-    <!-- Users Table -->
-    <h3>All Users</h3>
-    <table id="usersTable">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Level</th>
-          <th>Section</th>
-          <th>Edit Section</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- Filter Grades -->
-    <h3>Filter Grades by Level / Section</h3>
-    <select id="filterLevel" onchange="filterGrades()">
-      <option value="">All Levels</option>
-      <option value="7">7</option><option value="8">8</option>
-      <option value="9">9</option><option value="10">10</option>
-      <option value="11">11</option><option value="12">12</option>
-    </select>
-    <select id="filterSection" onchange="filterGrades()">
-      <option value="">All Sections</option>
-      <option value="A">A</option><option value="B">B</option>
-      <option value="C">C</option><option value="D">D</option>
-    </select>
-
-    <!-- Grades Table -->
-    <h3>Grades</h3>
-    <table id="gradesTable">
+id="gradesTable">
       <thead>
         <tr>
           <th>Student</th>
@@ -350,3 +271,247 @@ window.createAdmin = async ()=>{
 </script>
 </body>
   </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DANHS School Grades</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, select, button { display: block; margin: 5px 0; padding: 8px; }
+table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+table { margin-top: 10px; width: 100%; }
+#adminPanel, #gradesContainer, #logoutBtn { display:none; }
+.strength { font-size: 12px; color: red; }
+</style>
+</head>
+<body>
+
+<h1>DANHS School Grades</h1>
+<div id="welcomeUser" style="margin-bottom: 15px; font-weight: bold;"></div>
+
+<!-- Signup Form -->
+<div id="signupDiv">
+  <h2>Signup</h2>
+  <input type="email" id="signupEmail" placeholder="Email">
+  <input type="password" id="signupPassword" placeholder="Password">
+  <button type="button" id="togglePassword">Show Password</button>
+  <div class="strength" id="passwordStrength">Password strength: </div>
+  <button onclick="signup()">Sign Up</button>
+</div>
+
+<!-- Login Form -->
+<div id="loginDiv">
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email">
+  <input type="password" id="loginPassword" placeholder="Password">
+  <button type="button" id="toggleLoginPassword">Show Password</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- Logout Button -->
+<button id="logoutBtn">Logout</button>
+
+<hr>
+
+<!-- Main Content -->
+<div id="mainContent">
+
+  <!-- Admin Panel -->
+  <div id="adminPanel">
+    <h2>Admin Panel</h2>
+
+    <!-- Users Table -->
+    <h3>All Users</h3>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Edit Section</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Filter Grades -->
+    <h3>Filter Grades by Level / Section</h3>
+    <select id="filterLevel" onchange="filterGrades()">
+      <option value="">All Levels</option>
+      <option value="7">7</option><option value="8">8</option>
+      <option value="9">9</option><option value="10">10</option>
+      <option value="11">11</option><option value="12">12</option>
+    </select>
+    <select id="filterSection" onchange="filterGrades()">
+      <option value="">All Sections</option>
+      <option value="A">A</option><option value="B">B</option>
+      <option value="C">C</option><option value="D">D</option>
+    </select>
+
+    <!-- Grades Table -->
+    <h3>Grades</h3>
+    <table id="gradesTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Subject</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Add/Edit Grades -->
+    <h3>Add / Update Grade</h3>
+    <input type="text" id="studentName" placeholder="Student Name">
+    <select id="studentLevelForm">
+      <option value="">Select Level</option>
+      <option value="7">7</option><option value="8">8</option>
+      <option value="9">9</option><option value="10">10</option>
+      <option value="11">11</option><option value="12">12</option>
+    </select>
+    <select id="studentSectionForm">
+      <option value="">Select Section</option>
+      <option value="A">A</option><option value="B">B</option>
+      <option value="C">C</option><option value="D">D</option>
+    </select>
+    <input type="text" id="studentSubject" placeholder="Subject">
+    <input type="number" id="studentGrade" placeholder="Grade (0-100)">
+    <button onclick="addOrUpdateGrade()">Add / Update Grade</button>
+
+    <!-- Create New Admin -->
+    <h3>Create New Admin</h3>
+    <input type="email" id="newAdminEmail" placeholder="Admin Email">
+    <input type="password" id="newAdminPassword" placeholder="Password">
+    <button type="button" id="toggleNewAdminPassword">Show Password</button>
+    <div class="strength" id="newAdminStrength">Password strength: </div>
+    <button onclick="createAdmin()">Create Admin</button>
+  </div>
+
+  <!-- Grades Table for Students -->
+  <div id="gradesContainer">
+    <h2>Grades</h2>
+    <table id="gradesTableStudent">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Subject</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+  authDomain: "test-9c727.firebaseapp.com",
+  projectId: "test-9c727",
+  storageBucket: "test-9c727.firebasestorage.app",
+  messagingSenderId: "198578631587",
+  appId: "1:198578631587:web:c0831122f964d46149e016"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Password toggle and strength
+const passwordInput = document.getElementById("signupPassword");
+const strengthText = document.getElementById("passwordStrength");
+passwordInput.addEventListener("input", ()=>{strengthText.innerText = passwordInput.value.length>=6?"Password strength: Strong":"Password strength: Weak";});
+document.getElementById("togglePassword").addEventListener("click", ()=>{passwordInput.type=passwordInput.type==="password"?"text":"password";});
+document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
+  const loginPass = document.getElementById("loginPassword");
+  loginPass.type=loginPass.type==="password"?"text":"password";
+});
+const newAdminPass = document.getElementById("newAdminPassword");
+const newAdminStrength = document.getElementById("newAdminStrength");
+newAdminPass.addEventListener("input", ()=>{newAdminStrength.innerText=newAdminPass.value.length>=6?"Password strength: Strong":"Password strength: Weak";});
+document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>{newAdminPass.type=newAdminPass.type==="password"?"text":"password";});
+
+// Signup
+window.signup = async ()=>{
+  const email = document.getElementById("signupEmail").value;
+  const password = passwordInput.value;
+  if(password.length<6){alert("Password too short");return;}
+  try{
+    await createUserWithEmailAndPassword(auth,email,password);
+    await addDoc(collection(db,"users"),{email,level:"7",section:"A"});
+    alert("Signup successful! Ask admin to update level/section.");
+  }catch(err){alert("Firebase error: "+err.message);}
+}
+
+// Login
+window.login = async ()=>{
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+  try{await signInWithEmailAndPassword(auth,email,password);}catch(err){alert("Firebase error: "+err.message);}
+}
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  await auth.signOut();
+  location.reload();
+});
+
+// Auth state
+onAuthStateChanged(auth,user=>{
+  if(user){
+    document.getElementById("signupDiv").style.display="none";
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("logoutBtn").style.display="block";
+    document.getElementById("mainContent").style.display="block";
+    checkAdmin(user.email);
+  }else{
+    document.getElementById("signupDiv").style.display="block";
+    document.getElementById("loginDiv").style.display="block";
+    document.getElementById("gradesContainer").style.display="none";
+    document.getElementById("adminPanel").style.display="none";
+    document.getElementById("logoutBtn").style.display="none";
+    document.getElementById("mainContent").style.display="none";
+    document.getElementById("welcomeUser").innerText="";
+  }
+});
+
+// Check admin & welcome message
+async function checkAdmin(email){
+  const q = query(collection(db,"users"), where("email","==",email));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(docu=>{
+    const data = docu.data();
+    const welcomeDiv = document.getElementById("welcomeUser");
+    if(data.level==="admin"){
+      document.getElementById("adminPanel").style.display="block";
+      loadUsers();
+      filterGrades();
+      welcomeDiv.innerText=`Welcome Admin: ${email}`;
+    }else{
+      document.getElementById("gradesContainer").style.display="block";
+      loadGrades(data.level,data.section);
+      welcomeDiv.innerText=`Welcome Student: ${email} (Level ${data.level}, Section ${data.section})`;
+    }
+  });
+}
+
+// Load users
+async function loadUsers(){
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML="";
+  const snapshot = await getDocs(collection(db,"users"));
+  snapshot.forEach(doc=>{
+    const data=doc.data();
+    const tr
