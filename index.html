@@ -1,224 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>School Grades System</title>
-<style>
-body{font-family:Arial,sans-serif;margin:10px;}
-h2,h3{color:#333;}
-input,select,button{margin:5px;padding:8px;width:95%;max-width:300px;}
-button{background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;}
-button:hover{background:#0056b3;}
-table{border-collapse:collapse;width:100%;margin-bottom:15px;}
-th,td{border:1px solid #ccc;padding:5px;text-align:left;}
-.hidden{display:none;}
-.strength{font-weight:bold;margin-left:5px;}
-.showpass{cursor:pointer;color:#007bff;font-size:0.9em;margin-left:5px;}
-</style>
+  <meta charset="UTF-8">
+  <title>DANHS School Grades</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { display: block; margin: 5px 0; padding: 8px; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+    table { margin-top: 10px; }
+  </style>
 </head>
 <body>
 
-<h2>📚 School Grades System</h2>
+<h1>DANHS School Grades</h1>
 
-<!-- LOGIN/SIGNUP -->
-<div id="loginSection">
-  <h3>Signup / Login</h3>
-  <div id="step1">
-    <input id="email" type="email" placeholder="Email"><br>
-    <button id="nextStep1">Next</button>
-  </div>
-  <div id="step2" class="hidden">
-    <input id="password" type="password" placeholder="Password">
-    <span id="strength" class="strength"></span>
-    <span id="togglePassword" class="showpass">Show</span><br>
-    <button id="nextStep2">Next</button>
-    <button id="backStep2">Back</button>
-  </div>
-  <div id="step3" class="hidden">
-    <input id="confirmPassword" type="password" placeholder="Confirm Password">
-    <span id="toggleConfirm" class="showpass">Show</span><br>
-    <button id="signup">Sign Up</button>
-    <button id="backStep3">Back</button>
-  </div>
-  <hr>
-  <input id="loginEmail" type="email" placeholder="Login Email">
-  <input id="loginPassword" type="password" placeholder="Login Password">
-  <span id="toggleLogin" class="showpass">Show</span><br>
-  <button id="login">Login</button>
+<!-- Signup Form -->
+<div id="signupDiv">
+  <h2>Signup</h2>
+  <input type="email" id="signupEmail" placeholder="Email">
+  <input type="password" id="signupPassword" placeholder="Password">
+  <button onclick="signup()">Sign Up</button>
 </div>
 
-<!-- APP -->
-<div id="appSection" class="hidden">
-  <h3>Welcome, <span id="userEmailDisplay"></span> (<span id="userLevelSection"></span>)</h3>
-  <button id="logout">Logout</button>
+<!-- Login Form -->
+<div id="loginDiv">
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email">
+  <input type="password" id="loginPassword" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<hr>
+
+<!-- Main Content (hidden until login) -->
+<div id="mainContent" style="display:none;">
 
   <!-- Admin Panel -->
-  <div id="adminSection" class="hidden">
-    <h3>Grades Management</h3>
-    <input id="studentName" placeholder="Student Name">
-    <select id="gradeLevel">
-      <option value="7">Level 7</option>
-      <option value="8">Level 8</option>
-      <option value="9">Level 9</option>
-      <option value="10">Level 10</option>
-      <option value="11">Level 11</option>
-      <option value="12">Level 12</option>
-    </select>
-    <select id="gradeSectionSelect">
-      <option value="Juan">Juan</option>
-      <option value="Mamaw">Mamaw</option>
-    </select>
-    <input id="subject" placeholder="Subject">
-    <input id="grade" placeholder="Grade">
-    <button id="saveGrade">Save Grade</button>
-
-    <h3>Assign Student to Section</h3>
-    <input id="studentEmailAssign" placeholder="Student Email">
-    <select id="assignLevel">
-      <option value="7">Level 7</option>
-      <option value="8">Level 8</option>
-      <option value="9">Level 9</option>
-      <option value="10">Level 10</option>
-      <option value="11">Level 11</option>
-      <option value="12">Level 12</option>
-    </select>
-    <select id="assignSection">
-      <option value="Juan">Juan</option>
-      <option value="Mamaw">Mamaw</option>
-    </select>
-    <button id="assignStudent">Assign</button>
-
-    <h3>Rename Section</h3>
-    <select id="renameLevel">
-      <option value="7">Level 7</option>
-      <option value="8">Level 8</option>
-      <option value="9">Level 9</option>
-      <option value="10">Level 10</option>
-      <option value="11">Level 11</option>
-      <option value="12">Level 12</option>
-    </select>
-    <select id="renameSectionSelect">
-      <option value="Juan">Juan</option>
-      <option value="Mamaw">Mamaw</option>
-    </select>
-    <input id="newSectionName" placeholder="New Section Name">
-    <button id="renameSectionBtn">Rename Section</button>
+  <div id="adminPanel" style="display:none;">
+    <h2>Admin Panel</h2>
+    <input type="text" id="studentName" placeholder="Student Name">
+    <input type="text" id="studentLevel" placeholder="Level">
+    <input type="text" id="studentSection" placeholder="Section">
+    <input type="text" id="studentSubject" placeholder="Subject">
+    <input type="number" id="studentGrade" placeholder="Grade">
+    <button onclick="addGrade()">Add / Update Grade</button>
   </div>
 
-  <!-- Grades Display -->
-  <div id="gradesTables"></div>
+  <!-- Grades Table -->
+  <div id="gradesContainer">
+    <h2>Grades</h2>
+    <table id="gradesTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Level</th>
+          <th>Section</th>
+          <th>Subject</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// 🔹 Firebase config (replace with your project config)
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
   projectId: "test-9c727",
   storageBucket: "test-9c727.firebasestorage.app",
   messagingSenderId: "198578631587",
-  appId: "1:198578631587:web:c97a46805e01441b49e016"
+  appId: "1:198578631587:web:c0831122f964d46149e016"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const ADMIN_EMAIL = "enzo@gmail.com";
-let currentUserLevel = "";
-let currentUserSection = "";
-
-// Elements
-const step1=document.getElementById('step1');
-const step2=document.getElementById('step2');
-const step3=document.getElementById('step3');
-const emailInput=document.getElementById('email');
-const passwordInput=document.getElementById('password');
-const confirmPasswordInput=document.getElementById('confirmPassword');
-const strengthSpan=document.getElementById('strength');
-const togglePassword=document.getElementById('togglePassword');
-const toggleConfirm=document.getElementById('toggleConfirm');
-const toggleLogin=document.getElementById('toggleLogin');
-const loginPassword=document.getElementById('loginPassword');
-const loginEmail=document.getElementById('loginEmail');
-
-// 🔹 Show/hide password
-togglePassword.onclick=()=>{passwordInput.type=passwordInput.type==='password'?'text':'password';togglePassword.textContent=passwordInput.type==='password'?'Show':'Hide';};
-toggleConfirm.onclick=()=>{confirmPasswordInput.type=confirmPasswordInput.type==='password'?'text':'password';toggleConfirm.textContent=confirmPasswordInput.type==='password'?'Show':'Hide';};
-toggleLogin.onclick=()=>{loginPassword.type=loginPassword.type==='password'?'text':'password';toggleLogin.textContent=loginPassword.type==='password'?'Show':'Hide';};
-
-// Password strength
-passwordInput.oninput=()=>{const val=passwordInput.value;let s="Weak";if(val.length>=8&&/[A-Z]/.test(val)&&/[0-9]/.test(val))s="Strong";else if(val.length>=6)s="Medium";strengthSpan.textContent=s;strengthSpan.style.color=s==="Strong"?"green":s==="Medium"?"orange":"red";};
-
-// Step navigation
-document.getElementById('nextStep1').onclick=()=>{if(!emailInput.value.includes('@')){alert("Enter valid email");return;} step1.classList.add('hidden'); step2.classList.remove('hidden');};
-document.getElementById('backStep2').onclick=()=>{step2.classList.add('hidden'); step1.classList.remove('hidden');};
-document.getElementById('nextStep2').onclick=()=>{if(passwordInput.value.length<6){alert("Password too short");return;} step2.classList.add('hidden'); step3.classList.remove('hidden');};
-document.getElementById('backStep3').onclick=()=>{step3.classList.add('hidden'); step2.classList.remove('hidden');};
-
-// Signup
-document.getElementById('signup').onclick=async()=>{
-if(passwordInput.value!==confirmPasswordInput.value){alert("Passwords do not match");return;}
-try{
-await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-await setDoc(doc(db,"users",emailInput.value),{level:"",section:""});
-alert("✅ Account created! Wait for admin to assign level/section.");
-step3.classList.add('hidden'); step1.classList.remove('hidden');
-emailInput.value=""; passwordInput.value=""; confirmPasswordInput.value=""; strengthSpan.textContent="";
-}catch(e){alert("Error: "+e.message);}
-};
-
-// Login
-document.getElementById('login').onclick=async()=>{
-try{await signInWithEmailAndPassword(auth,loginEmail.value,loginPassword.value);}catch(e){alert("Login failed: "+e.message);}
-};
-
-// Logout
-document.getElementById('logout').onclick=()=>{signOut(auth);};
-
-// 🔹 Auth state change
-onAuthStateChanged(auth,async(user)=>{
-if(user){
-document.getElementById('loginSection').classList.add('hidden');
-document.getElementById('appSection').classList.remove('hidden');
-document.getElementById('userEmailDisplay').textContent=user.email;
-const userDoc=await getDoc(doc(db,"users",user.email));
-if(userDoc.exists()){
-currentUserLevel=userDoc.data().level;
-currentUserSection=userDoc.data().section;
-document.getElementById('userLevelSection').textContent=currentUserLevel+" / "+currentUserSection;
-if(user.email===ADMIN_EMAIL){document.getElementById('adminSection').classList.remove('hidden');}else{document.getElementById('adminSection').classList.add('hidden');}
-loadGrades();
+// --- Signup ---
+window.signup = () => {
+  const email = document.getElementById("signupEmail").value;
+  const password = document.getElementById("signupPassword").value;
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      alert("Signup successful");
+      document.getElementById("signupDiv").style.display = "none";
+      document.getElementById("loginDiv").style.display = "none";
+    })
+    .catch(err => alert(err.message));
 }
-}else{
-document.getElementById('loginSection').classList.remove('hidden');
-document.getElementById('appSection').classList.add('hidden');
+
+// --- Login ---
+window.login = () => {
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+  signInWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      alert("Login successful");
+      document.getElementById("signupDiv").style.display = "none";
+      document.getElementById("loginDiv").style.display = "none";
+    })
+    .catch(err => alert(err.message));
 }
+
+// --- Show main content only after login ---
+onAuthStateChanged(auth, user => {
+  if(user){
+    document.getElementById("mainContent").style.display = "block";
+
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", user.email));
+    getDocs(q).then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if(data.level === "admin"){
+          document.getElementById("adminPanel").style.display = "block";
+        }
+        loadGrades(data.level, data.section); // student sees only their section
+      });
+    });
+
+    // Hide login/signup forms
+    document.getElementById("signupDiv").style.display = "none";
+    document.getElementById("loginDiv").style.display = "none";
+
+  } else {
+    // logged out → hide everything
+    document.getElementById("mainContent").style.display = "none";
+    document.getElementById("adminPanel").style.display = "none";
+    document.getElementById("signupDiv").style.display = "block";
+    document.getElementById("loginDiv").style.display = "block";
+  }
 });
 
-// 🔹 Load Grades
-async function loadGrades(){
-const gradesDiv=document.getElementById('gradesTables');
-gradesDiv.innerHTML="";
-const snapshot=await getDocs(collection(db,"grades"));
-const levels=["7","8","9","10","11","12"];
-for(const lvl of levels){
-let table=`<h3>Level ${lvl}</h3><table><tr><th>Student</th><th>Section</th><th>Subject</th><th>Grade</th></tr>`;
-snapshot.forEach(doc=>{
-const g=doc.data();
-if(user.email===ADMIN_EMAIL || (g.level==lvl && g.section===currentUserSection)){
-table+=`<tr><td>${g.student}</td><td>${g.section}</td><td>${g.subject}</td><td>${g.grade}</td></tr>`;
+// --- Add/Update Grade (Admin only) ---
+window.addGrade = async () => {
+  const name = document.getElementById("studentName").value;
+  const level = document.getElementById("studentLevel").value;
+  const section = document.getElementById("studentSection").value;
+  const subject = document.getElementById("studentSubject").value;
+  const grade = document.getElementById("studentGrade").value;
+
+  await addDoc(collection(db, "grades"), { student:name, level, section, subject, grade });
+  alert("Grade added!");
+  loadGrades(level, section);
 }
-});
-table+="</table>";
-gradesDiv.innerHTML+=table;
-}
+
+// --- Load Grades for current user ---
+async function loadGrades(userLevel, userSection){
+  const gradesTable = document.querySelector("#gradesTable tbody");
+  gradesTable.innerHTML = "";
+  const gradesRef = collection(db, "grades");
+  const q = query(gradesRef, where("level", "==", userLevel), where("section", "==", userSection));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${doc.data().student}</td><td>${doc.data().level}</td><td>${doc.data().section}</td><td>${doc.data().subject}</td><td>${doc.data().grade}</td>`;
+    gradesTable.appendChild(tr);
+  });
 }
 </script>
+
 </body>
-  </html>
+</html>
