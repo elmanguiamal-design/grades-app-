@@ -14,12 +14,12 @@ header {
   color: white;
   padding: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 #hamburger {
   font-size: 24px;
   cursor: pointer;
+  margin-right: 10px;
 }
 #sideMenu {
   position: fixed;
@@ -71,7 +71,7 @@ th, td {
 }
 .strength { font-size: 12px; color: red; }
 
-/* Responsive Design */
+/* Responsive */
 @media(max-width: 600px) {
   header h1 { font-size: 18px; }
   table, th, td { font-size: 12px; }
@@ -81,13 +81,12 @@ th, td {
 <body>
 
 <header>
+  <div id="hamburger" onclick="toggleMenu()">☰</div>
   <h1>DANHS School Grades</h1>
-  <div id="hamburger" onclick="openMenu()">☰</div>
 </header>
 
 <!-- Side Menu -->
 <div id="sideMenu">
-  <button onclick="closeMenu()">❌ Close</button>
   <button onclick="showPanel('gradesContainer')">📖 Grades</button>
   <button onclick="showPanel('adminPanel')">⚙️ Admin Panel</button>
   <button onclick="showPanel('infoPanel')">👤 My Information</button>
@@ -143,7 +142,8 @@ th, td {
     <select id="studentSection">
       <option value="">Select Section</option>
       <option value="A">A</option><option value="B">B</option>
-      <option value="C">C</option><option value="D">D</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
     </select>
     <input type="text" id="studentSubject" placeholder="Subject">
     <input type="number" id="studentGrade" placeholder="Grade">
@@ -181,15 +181,15 @@ th, td {
     <button onclick="saveInfo()">Save Info</button>
   </div>
 
-      </div>
+</div>
 
-  <script type="module">
+<script type="module">
 // Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Your Firebase config
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -203,213 +203,223 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ========== ALL FUNCTIONS ==========
-// Open / Close Menu
-window.openMenu = ()=> document.getElementById("sideMenu").classList.add("open");
-window.closeMenu = ()=> document.getElementById("sideMenu").classList.remove("open");
-
-// Toggle forms
-window.toggleForms = ()=>{
-  document.getElementById("signupDiv").style.display =
-    document.getElementById("signupDiv").style.display==="none"?"block":"none";
-  document.getElementById("loginDiv").style.display =
-    document.getElementById("loginDiv").style.display==="none"?"block":"none";
+// ========== HAMBURGER MENU ==========
+window.toggleMenu = ()=>{
+  const menu=document.getElementById("sideMenu");
+  menu.classList.toggle("open");
 };
 
-// Password strength
-const signupPassword = document.getElementById("signupPassword");
-const passwordStrength = document.getElementById("passwordStrength");
-signupPassword.addEventListener("input", ()=>{
-  passwordStrength.innerText = signupPassword.value.length >=6 ? "Password strength: Strong" : "Password strength: Weak";
+// ========== REST OF THE SCRIPT (signup/login/admin/grades/info) ==========
+
+  // ====== PASSWORD STRENGTH & TOGGLE ======
+const passwordInput = document.getElementById("signupPassword");
+const strengthText = document.getElementById("passwordStrength");
+passwordInput.addEventListener("input", ()=>{
+  strengthText.innerText = passwordInput.value.length >= 6 ? "Password strength: Strong" : "Password strength: Weak";
 });
 document.getElementById("togglePassword").addEventListener("click", ()=>{
-  signupPassword.type = signupPassword.type==="password"?"text":"password";
+  passwordInput.type = passwordInput.type==="password"?"text":"password";
 });
-
-// Login password toggle
 document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
   const loginPass = document.getElementById("loginPassword");
   loginPass.type = loginPass.type==="password"?"text":"password";
 });
-
-// New admin password toggle
 const newAdminPass = document.getElementById("newAdminPassword");
+const newAdminStrength = document.getElementById("newAdminStrength");
+newAdminPass.addEventListener("input", ()=>{
+  newAdminStrength.innerText = newAdminPass.value.length>=6 ? "Password strength: Strong" : "Password strength: Weak";
+});
 document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>{
   newAdminPass.type = newAdminPass.type==="password"?"text":"password";
 });
 
-// ========== AUTH ==========
-// Signup
+// ====== TOGGLE LOGIN/SIGNUP ======
+window.toggleForms = ()=>{
+  const signup=document.getElementById("signupDiv");
+  const login=document.getElementById("loginDiv");
+  signup.style.display = signup.style.display==="none"?"block":"none";
+  login.style.display = login.style.display==="none"?"block":"none";
+};
+
+// ====== SIGNUP ======
 window.signup = async ()=>{
-  const name = document.getElementById("signupName").value;
-  const email = document.getElementById("signupEmail").value;
-  const password = document.getElementById("signupPassword").value;
-  if(password.length < 6){ alert("Password too short"); return; }
+  const email=document.getElementById("signupEmail").value;
+  const password=passwordInput.value;
+  const name=document.getElementById("signupName").value;
+  if(password.length<6){ alert("Password too short"); return; }
   try{
     await createUserWithEmailAndPassword(auth,email,password);
     await addDoc(collection(db,"users"),{email,name,level:"7",section:"A"});
-    alert("Signup successful! Ask admin to update level/section.");
-  }catch(err){ alert(err.message); }
+    alert("Signup successful!");
+  }catch(err){ alert("Firebase error: "+err.message); }
 };
 
-// Login
+// ====== LOGIN ======
 window.login = async ()=>{
-  const email = document.getElementById("loginEmail").value;
-  const password = document.getElementById("loginPassword").value;
-  try{
-    await signInWithEmailAndPassword(auth,email,password);
-  }catch(err){ alert(err.message); }
+  const email=document.getElementById("loginEmail").value;
+  const password=document.getElementById("loginPassword").value;
+  try{ await signInWithEmailAndPassword(auth,email,password); }
+  catch(err){ alert("Firebase error: "+err.message); }
 };
 
-// Logout
+// ====== LOGOUT ======
 document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   await signOut(auth);
-  closeMenu();
+  location.reload();
 });
 
-// Auth state
-onAuthStateChanged(auth, user=>{
+// ====== AUTH STATE ======
+onAuthStateChanged(auth,user=>{
   if(user){
     document.getElementById("signupDiv").style.display="none";
     document.getElementById("loginDiv").style.display="none";
+    showPanel('gradesContainer');
     checkAdmin(user.email);
   }else{
     document.getElementById("signupDiv").style.display="block";
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("gradesContainer").style.display="none";
-    document.getElementById("adminPanel").style.display="none";
-    document.getElementById("infoPanel").style.display="none";
+    document.getElementById("loginDiv").style.display="block";
   }
 });
 
-// ========== ADMIN / GRADES / INFO ==========
+// ====== SHOW PANEL ======
+window.showPanel=(id)=>{
+  ['gradesContainer','adminPanel','infoPanel'].forEach(p=>{
+    document.getElementById(p).style.display = (p===id)?"block":"none";
+  });
+};
+
+// ====== CHECK ADMIN ======
 async function checkAdmin(email){
-  const q = query(collection(db,"users"),where("email","==",email));
-  const snap = await getDocs(q);
-  snap.forEach(d=>{
-    const data = d.data();
+  const q=query(collection(db,"users"),where("email","==",email));
+  const snapshot=await getDocs(q);
+  snapshot.forEach(docu=>{
+    const data=docu.data();
     if(data.level==="admin"){
-      showPanel('adminPanel');
+      document.getElementById("adminPanel").style.display="block";
       loadUsers();
       loadGradesAll();
     }else{
-      showPanel('gradesContainer');
       loadGrades(data.level,data.section);
+      showInfo(data);
     }
   });
 }
 
-window.showPanel = function(panelId){
-  ["gradesContainer","adminPanel","infoPanel"].forEach(id=>{
-    document.getElementById(id).style.display="none";
-  });
-  document.getElementById(panelId).style.display="block";
-  closeMenu();
-};
-
-// Load users
+// ====== LOAD USERS ======
 async function loadUsers(){
-  const tbody = document.querySelector("#usersTable tbody");
+  const tbody=document.querySelector("#usersTable tbody");
   tbody.innerHTML="";
-  const snap = await getDocs(collection(db,"users"));
-  snap.forEach(u=>{
-    const d = u.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${d.email}</td><td>${d.name||""}</td><td>${d.level}</td>
-      <td>${d.section}</td>
-      <td><button onclick="deleteUser('${u.id}')">Delete</button></td>`;
+  const snapshot=await getDocs(collection(db,"users"));
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${d.email}</td><td>${d.name || ""}</td><td>${d.level}</td><td>${d.section}</td>
+      <td>
+        <button onclick="deleteMember('${doc.id}')">Delete</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 }
 
-// Delete user
-window.deleteUser = async(id)=>{
-  await deleteDoc(doc(db,"users",id));
-  alert("User deleted!");
-  loadUsers();
+// ====== DELETE MEMBER ======
+window.deleteMember=async(id)=>{
+  if(confirm("Are you sure to delete this member?")){
+    await deleteDoc(doc(db,"users",id));
+    loadUsers();
+  }
 };
 
-// Load all grades
+// ====== LOAD GRADES ======
 async function loadGradesAll(){
-  const tbody = document.querySelector("#gradesTable tbody");
+  const tbody=document.querySelector("#gradesTable tbody");
   tbody.innerHTML="";
-  const snap = await getDocs(collection(db,"grades"));
-  snap.forEach(g=>{
-    const d=g.data();
-    const remarks = d.grade >= 75 ? "<span style='color:green'>✅ Passed</span>" : "<span style='color:red'>❌ Failed</span>";
+  const snapshot=await getDocs(collection(db,"grades"));
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    const remarks=d.grade<75?"Failed":"Passed";
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td>
-    <td>${d.subject}</td><td>${d.grade}</td><td>${remarks}</td>`;
+    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td><td>${remarks}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-// Load grades for student
 async function loadGrades(level,section){
-  const tbody = document.querySelector("#gradesTable tbody");
+  const tbody=document.querySelector("#gradesTable tbody");
   tbody.innerHTML="";
   const q=query(collection(db,"grades"),where("level","==",level),where("section","==",section));
-  const snap=await getDocs(q);
-  snap.forEach(g=>{
-    const d=g.data();
-    const remarks = d.grade >= 75 ? "<span style='color:green'>✅ Passed</span>" : "<span style='color:red'>❌ Failed</span>";
+  const snapshot=await getDocs(q);
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    const remarks=d.grade<75?"Failed":"Passed";
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td>
-    <td>${d.subject}</td><td>${d.grade}</td><td>${remarks}</td>`;
+    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td><td>${remarks}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-// Add or update grade
-window.addOrUpdateGrade = async()=>{
+// ====== ADD OR UPDATE GRADES ======
+window.addOrUpdateGrade=async()=>{
   const name=document.getElementById("studentName").value;
   const level=document.getElementById("studentLevel").value;
   const section=document.getElementById("studentSection").value;
   const subject=document.getElementById("studentSubject").value;
-  const grade=document.getElementById("studentGrade").value;
-  const q=query(collection(db,"grades"),where("student","==",name),where("subject","==",subject),where("level","==",level),where("section","==",section));
-  const snap=await getDocs(q);
-  if(!snap.empty){
-    snap.forEach(async g=>{
-      await updateDoc(doc(db,"grades",g.id),{grade});
+  const grade=parseInt(document.getElementById("studentGrade").value);
+  if(!name || !level || !section || !subject || isNaN(grade)){ alert("Fill all fields!"); return; }
+
+  const gradesRef=collection(db,"grades");
+  const q=query(gradesRef,where("student","==",name),where("subject","==",subject),where("level","==",level),where("section","==",section));
+  const snapshot=await getDocs(q);
+
+  if(!snapshot.empty){
+    snapshot.forEach(async docu=>{
+      await updateDoc(doc(db,"grades",docu.id),{grade});
     });
     alert("Grade updated!");
   }else{
-    await addDoc(collection(db,"grades"),{student:name,level,section,subject,grade:Number(grade)});
+    await addDoc(gradesRef,{student:name,level,section,subject,grade});
     alert("Grade added!");
   }
   loadGradesAll();
 };
 
-// Create admin
-window.createAdmin = async()=>{
+// ====== CREATE ADMIN ======
+window.createAdmin=async()=>{
   const email=document.getElementById("newAdminEmail").value;
   const password=newAdminPass.value;
-  if(password.length<6){alert("Password too short");return;}
+  if(password.length<6){ alert("Password too short"); return; }
   try{
     await createUserWithEmailAndPassword(auth,email,password);
-    await addDoc(collection(db,"users"),{email,level:"admin",section:"",name:""});
+    await addDoc(collection(db,"users"),{email,level:"admin",section:""});
     alert("New admin created!");
     loadUsers();
-  }catch(err){alert(err.message);}
+  }catch(err){ alert("Firebase error: "+err.message); }
 };
 
-// Save info
-window.saveInfo = async()=>{
-  const user=auth.currentUser;
-  if(!user)return;
+// ====== SHOW INFO ======
+function showInfo(data){
+  document.getElementById("infoName").value=data.name || "";
+  document.getElementById("infoNumber").value=data.number || "";
+  document.getElementById("infoPurok").value=data.purok || "";
+  document.getElementById("infoGuardian").value=data.guardian || "";
+  document.getElementById("infoGuardianPhone").value=data.guardianPhone || "";
+}
+
+// ====== SAVE INFO ======
+window.saveInfo=async()=>{
+  const user = auth.currentUser;
+  if(!user){ alert("Not logged in"); return; }
   const q=query(collection(db,"users"),where("email","==",user.email));
-  const snap=await getDocs(q);
-  snap.forEach(async u=>{
-    await updateDoc(doc(db,"users",u.id),{
+  const snapshot=await getDocs(q);
+  snapshot.forEach(async docu=>{
+    await updateDoc(doc(db,"users",docu.id),{
       name:document.getElementById("infoName").value,
       number:document.getElementById("infoNumber").value,
       purok:document.getElementById("infoPurok").value,
       guardian:document.getElementById("infoGuardian").value,
       guardianPhone:document.getElementById("infoGuardianPhone").value
     });
+    alert("Information saved!");
   });
-  alert("Info saved!");
 };
 </script>
 </body>
