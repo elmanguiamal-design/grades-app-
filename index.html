@@ -6,10 +6,10 @@
 <title>DANHS School Grades</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; }
-header { background:#2c3e50; color:white; padding:10px; display:flex; align-items:center; }
-#hamburger { font-size:24px; cursor:pointer; margin-right:10px; }
+header { background:#2c3e50; color:white; padding:10px; position:relative; }
+header h1 { margin:0; }
+#hamburger { position:absolute; top:10px; right:10px; font-size:24px; cursor:pointer; z-index:1100; }
 #sideMenu { position:fixed; top:0; left:-260px; width:250px; height:100%; background:#ecf0f1; padding:20px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,0.3); z-index:1000; }
-#sideMenu.open { left:0; }
 #sideMenu button, #sideMenu a { display:block; width:100%; padding:10px; margin:5px 0; background:#3498db; color:white; border:none; text-align:left; cursor:pointer; border-radius:5px; }
 #sideMenu button:hover, #sideMenu a:hover { background:#2980b9; }
 .container { padding:20px; }
@@ -24,8 +24,8 @@ th, td { padding:8px; text-align:center; }
 <body>
 
 <header>
-  <div id="hamburger" onclick="toggleMenu()">☰</div>
   <h1>DANHS School Grades</h1>
+  <div id="hamburger" onclick="toggleMenu()">☰</div>
 </header>
 
 <!-- Side Menu -->
@@ -125,15 +125,13 @@ th, td { padding:8px; text-align:center; }
     <button onclick="saveInfo()">Save Info</button>
   </div>
 
-</div>
-
 <script type="module">
-// Firebase imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Firebase config
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -142,43 +140,49 @@ const firebaseConfig = {
   messagingSenderId: "198578631587",
   appId: "1:198578631587:web:c0831122f964d46149e016"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Hamburger toggle
-window.toggleMenu = ()=>{
-  const menu=document.getElementById("sideMenu");
-  menu.classList.toggle("open");
-};
+// Password toggle
+document.getElementById("togglePassword").addEventListener("click", ()=>{ 
+  const p = document.getElementById("signupPassword"); 
+  p.type = (p.type==="password")?"text":"password"; 
+});
+document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{
+  const p = document.getElementById("loginPassword");
+  p.type = (p.type==="password")?"text":"password";
+});
+document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>{
+  const p = document.getElementById("newAdminPassword");
+  p.type = (p.type==="password")?"text":"password";
+});
 
-// Password toggle & strength
+// Password strength
 const passwordInput = document.getElementById("signupPassword");
 const strengthText = document.getElementById("passwordStrength");
 passwordInput.addEventListener("input", ()=>{ strengthText.innerText = passwordInput.value.length>=6?"Password strength: Strong":"Password strength: Weak"; });
-document.getElementById("togglePassword").addEventListener("click", ()=>{ passwordInput.type=passwordInput.type==="password"?"text":"password"; });
-document.getElementById("toggleLoginPassword").addEventListener("click", ()=>{ const loginPass=document.getElementById("loginPassword"); loginPass.type=loginPass.type==="password"?"text":"password"; });
 const newAdminPass = document.getElementById("newAdminPassword");
 const newAdminStrength = document.getElementById("newAdminStrength");
-newAdminPass.addEventListener("input", ()=>{ newAdminStrength.innerText=newAdminPass.value.length>=6?"Password strength: Strong":"Password strength: Weak"; });
-document.getElementById("toggleNewAdminPassword").addEventListener("click", ()=>{ newAdminPass.type=newAdminPass.type
+newAdminPass.addEventListener("input", ()=>{ newAdminStrength.innerText = newAdminPass.value.length>=6?"Password strength: Strong":"Password strength: Weak"; });
 
-                                                                   ==="password"?"text":"password"; });
+// Hamburger toggle
+window.toggleMenu = ()=>{
+  const menu = document.getElementById("sideMenu");
+  menu.style.left = (menu.style.left==="0px")?"-260px":"0px";
+};
 
-// Toggle login/signup forms
+// Toggle login/signup
 window.toggleForms = ()=>{
   const login = document.getElementById("loginDiv");
   const signup = document.getElementById("signupDiv");
   if(login.style.display==="none"){ login.style.display="block"; signup.style.display="none"; }
   else{ login.style.display="none"; signup.style.display="block"; }
 };
-
-// Show specific panel
 window.showPanel = (panelId)=>{
   const panels=["gradesContainer","adminPanel","infoPanel"];
   panels.forEach(p=>{ document.getElementById(p).style.display=(p===panelId)?"block":"none"; });
-  document.getElementById("sideMenu").classList.remove("open");
+  document.getElementById("sideMenu").style.left="-260px";
 };
 
 // Signup
@@ -190,7 +194,7 @@ window.signup = async ()=>{
   try{
     await createUserWithEmailAndPassword(auth,email,password);
     await addDoc(collection(db,"users"),{email,name,level:"7",section:"A"});
-    alert("Signup successful! Ask admin to update level/section.");
+    alert("Signup successful!");
   }catch(err){ alert("Error: "+err.message); }
 };
 
@@ -208,48 +212,31 @@ document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   location.reload();
 });
 
-// Auth state listener
+// Auth listener
 onAuthStateChanged(auth,user=>{
-  if(user){
-    document.getElementById("signupDiv").style.display="none";
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("logoutBtn").style.display="block";
-    checkAdmin(user.uid);
-  } else {
-    document.getElementById("signupDiv").style.display="block";
-    document.getElementById("loginDiv").style.display="block";
-    document.getElementById("logoutBtn").style.display="none";
-  }
+  if(user){ checkAdmin(user.uid); }
+  else{ document.getElementById("signupDiv").style.display="block"; document.getElementById("loginDiv").style.display="block"; }
 });
 
-// Check admin & load content
+// Check admin
 async function checkAdmin(uid){
-  const usersRef = collection(db,"users");
-  const snapshot = await getDocs(usersRef);
+  const q = query(collection(db,"users"),where("email","==",auth.currentUser.email));
+  const snap = await getDocs(q);
   let isAdmin=false;
-  snapshot.forEach(docu=>{
-    const data = docu.data();
-    if(data.email===auth.currentUser.email && data.level==="admin"){ isAdmin=true; }
-  });
+  snap.forEach(docu=>{ if(docu.data().level==="admin"){ isAdmin=true; } });
   if(isAdmin){ document.getElementById("adminPanel").style.display="block"; loadUsers(); loadGradesAll(); showPanel("gradesContainer"); }
-  else{
-    showPanel("gradesContainer");
-    loadGradesStudent(auth.currentUser.email);
-    loadInfoStudent(auth.currentUser.email);
-  }
+  else{ showPanel("gradesContainer"); loadGradesStudent(auth.currentUser.email); loadInfoStudent(auth.currentUser.email); }
 }
 
-// Load all users (admin)
+// Load users
 async function loadUsers(){
   const tbody = document.querySelector("#usersTable tbody"); tbody.innerHTML="";
-  const snapshot = await getDocs(collection(db,"users"));
-  snapshot.forEach(doc=>{
+  const snap = await getDocs(collection(db,"users"));
+  snap.forEach(doc=>{
     const d = doc.data();
     const tr = document.createElement("tr");
     tr.innerHTML=`<td>${d.email}</td><td>${d.name||""}</td><td>${d.level||""}</td><td>${d.section||""}</td>
-      <td>
-        <button onclick="deleteUser('${doc.id}')">Delete</button>
-      </td>`;
+      <td><button onclick="deleteUser('${doc.id}')">Delete</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -263,11 +250,11 @@ window.deleteUser = async (id)=>{
   }
 };
 
-// Load all grades (admin)
+// Load grades (admin)
 async function loadGradesAll(){
   const tbody = document.querySelector("#gradesTable tbody"); tbody.innerHTML="";
-  const snapshot = await getDocs(collection(db,"grades"));
-  snapshot.forEach(doc=>{
+  const snap = await getDocs(collection(db,"grades"));
+  snap.forEach(doc=>{
     const d = doc.data();
     const remarks = d.grade>=75?"Passed":"Failed";
     const tr = document.createElement("tr");
@@ -295,25 +282,20 @@ async function loadGradesStudent(email){
   });
 }
 
-// Add or update grade
+// Add/update grade
 window.addOrUpdateGrade = async ()=>{
   const name = document.getElementById("studentName").value;
   const level = document.getElementById("studentLevel").value;
   const section = document.getElementById("studentSection").value;
   const subject = document.getElementById("studentSubject").value;
   const grade = parseFloat(document.getElementById("studentGrade").value);
-  if(!name||!level||!section||!subject||!grade){ alert("Fill all fields"); return; }
+  if(!name||!level||!section||!subject||isNaN(grade)){ alert("Fill all fields"); return; }
 
   const gradesRef = collection(db,"grades");
   const q = query(gradesRef, where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
   const snapshot = await getDocs(q);
-  if(!snapshot.empty){
-    snapshot.forEach(async docu=>{ await updateDoc(doc(db,"grades",docu.id),{grade}); });
-    alert("Grade updated!");
-  } else {
-    await addDoc(gradesRef,{student:name,level,section,subject,grade});
-    alert("Grade added!");
-  }
+  if(!snapshot.empty){ snapshot.forEach(async docu=>{ await updateDoc(doc(db,"grades",docu.id),{grade}); }); alert("Grade updated!"); }
+  else{ await addDoc(gradesRef,{student:name,level,section,subject,grade}); alert("Grade added!"); }
   loadGradesAll();
 };
 
@@ -326,9 +308,7 @@ window.createAdmin = async ()=>{
     await createUserWithEmailAndPassword(auth,email,password);
     await addDoc(collection(db,"users"),{email,level:"admin",section:"",name:"Admin"});
     alert("New admin created!");
-    document.getElementById("newAdminEmail").value="";
-    newAdminPass.value="";
-    newAdminStrength.innerText="Password strength:";
+    document.getElementById("newAdminEmail").value=""; newAdminPass.value=""; newAdminStrength.innerText="Password strength:";
     loadUsers();
   }catch(err){ alert("Error: "+err.message); }
 };
