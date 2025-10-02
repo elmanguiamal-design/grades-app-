@@ -1,544 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>DANHS School Grades — Dashboard</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{--bg:#f4f6f8;--card:#fff;--muted:#666;--accent:#2563eb;--danger:#e11d48}
-    body{margin:0;font-family:Arial, Helvetica, sans-serif;background:var(--bg);color:#111}
-    header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-    .hamburger{font-size:20px; cursor:pointer; padding:6px 10px; border-radius:6px; background:#eef2ff; border:1px solid rgba(37,99,235,0.08)}
-    h1{margin:0;font-size:18px}
-    #app{display:flex;gap:16px;padding:18px;max-width:1200px;margin:18px auto}
-    #sidebar{width:240px;background:var(--card);border-radius:10px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04); display:none;flex-direction:column;gap:8px}
-    #sidebar.open{display:flex}
-    .menu-btn{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;border:1px solid #ececec;background:#fff;cursor:pointer}
-    .menu-btn:hover{box-shadow:0 2px 6px rgba(0,0,0,0.05)}
-    main{flex:1;display:flex;flex-direction:column;gap:12px}
-    .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-    .muted{color:var(--muted);font-size:13px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input,select,textarea,button{font-size:14px}
-    input,select,textarea{padding:8px;border:1px solid #e6e6e6;border-radius:8px;width:100%;box-sizing:border-box}
-    button{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer}
-    button.ghost{background:#fff;color:#111;border:1px solid #e6e6e6}
-    button.danger{background:var(--danger)}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
-    th{background:#fafafa;font-weight:600}
-    .close-btn{float:right;background:#fff;border:1px solid #eee;padding:6px;border-radius:6px;cursor:pointer}
-    .hidden{display:none}
-    .small{width:140px}
-    label{font-size:13px;color:#333;margin-top:6px;display:block}
-    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:999}
-    .confirm-box{background:white;padding:18px;border-radius:8px;max-width:420px;width:100%;box-shadow:0 6px 20px rgba(0,0,0,0.2)}
-    @media (max-width:900px){#app{padding:12px}#sidebar{position:fixed;left:10px;top:70px;z-index:40}}
-  </style>
+<meta charset="UTF-8">
+<title>DANHS School Grades</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f9f9f9; }
+h1 { text-align:center; margin:20px 0; }
+input, select, button { margin:5px 0; padding:8px; border-radius:6px; border:1px solid #ccc; width:100%; }
+button { cursor:pointer; background:#4CAF50; color:white; border:none; }
+button:hover { background:#45a049; }
+table { border-collapse: collapse; width:100%; margin-top:10px; background:white; }
+th, td { border:1px solid #ddd; padding:8px; text-align:center; }
+th { background:#f2f2f2; }
+.strength { font-size:12px; color:red; }
+
+/* Hamburger menu */
+#menuBtn { font-size:22px; cursor:pointer; margin:10px; }
+#sideMenu {
+  height:100%; width:0; position:fixed; top:0; left:0; background:#333; 
+  overflow-x:hidden; transition:0.3s; padding-top:60px; z-index:1000;
+}
+#sideMenu a, #sideMenu button {
+  padding:10px 15px; text-decoration:none; font-size:18px; color:white; display:block; border:none; background:none; text-align:left;
+}
+#sideMenu a:hover, #sideMenu button:hover { background:#575757; }
+#sideMenu .closeBtn {
+  position:absolute; top:10px; right:20px; font-size:28px; background:none; color:white; border:none; cursor:pointer;
+}
+
+/* Panels */
+.panel { display:none; padding:20px; margin:20px; background:white; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+.closePanel { float:right; background:#e74c3c; color:white; border:none; padding:4px 8px; cursor:pointer; border-radius:4px; }
+
+/* Center forms */
+#signupDiv, #loginDiv { max-width:350px; margin:20px auto; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+</style>
 </head>
 <body>
 
-<header>
-  <div id="hamburgerBtn" class="hamburger">☰</div>
-  <h1>DANHS School Grades</h1>
-  <div style="margin-left:auto" id="authControls">
-    <span id="welcomeText" class="muted"></span>
-    <button id="logoutBtn" class="ghost hidden" onclick="logout()">Logout</button>
-  </div>
-</header>
+<h1>DANHS School Grades</h1>
 
-<div id="app">
-  <aside id="sidebar" aria-hidden="true">
-    <div class="menu-btn" onclick="openPanel('studentsList')">👥 All Users</div>
-    <div class="menu-btn" onclick="openPanel('addGrade')">➕ Add / Update Grade</div>
-    <div class="menu-btn" onclick="openPanel('deleteGrade')">🗑️ Delete Grade</div>
-    <div class="menu-btn" onclick="openPanel('addAdmin')">🧑‍💼 Add Admin</div>
-    <div class="menu-btn" onclick="openPanel('deleteMember')">❌ Delete Member</div>
-    <hr/>
-    <div class="menu-btn" onclick="openPanel('myInfo')">📄 My Info</div>
-    <div class="menu-btn" onclick="openPanel('myGrades')">🎓 My Grades</div>
-  </aside>
+<!-- Hamburger button -->
+<span id="menuBtn" onclick="openMenu()">☰ Menu</span>
 
-  <main>
-    <!-- AUTH -->
-    <section id="authCard" class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <button class="ghost" onclick="showAuth('signup')">Sign up</button>
-          <button class="ghost" onclick="showAuth('login')">Login</button>
-        </div>
-        <div class="muted">No OTP — simple email/password</div>
-      </div>
-
-      <div id="signupForm">
-        <h3>Sign up (Student)</h3>
-        <div class="row">
-          <input id="suName" placeholder="Full name">
-          <input id="suEmail" placeholder="Email" type="email">
-        </div>
-        <div class="row">
-          <input id="suPassword" placeholder="Password (min 6)" type="password">
-          <input id="suMobile" placeholder="Mobile number">
-        </div>
-        <div class="row">
-          <input id="suPurok" placeholder="Purok">
-          <input id="suGuardian" placeholder="Parent/Guardian name">
-        </div>
-        <div class="row">
-          <input id="suGuardianPhone" placeholder="Parent/Guardian phone">
-          <select id="suLevel" class="small"><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
-          <select id="suSection" class="small"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-        </div>
-        <div class="row">
-          <button onclick="signup()">Create account</button>
-          <button class="ghost" onclick="showAuth('login')">Already have account → Login</button>
-        </div>
-        <div id="signupMsg" class="muted"></div>
-      </div>
-
-      <div id="loginForm" class="hidden">
-        <h3>Login</h3>
-        <div class="row">
-          <input id="liEmail" placeholder="Email" type="email">
-          <input id="liPassword" placeholder="Password" type="password">
-        </div>
-        <div class="row">
-          <button onclick="login()">Login</button>
-          <button class="ghost" onclick="showAuth('signup')">Create account</button>
-        </div>
-        <div id="loginMsg" class="muted"></div>
-      </div>
-    </section>
-
-    <!-- Admin panels -->
-    <section id="studentsList" class="card hidden">
-      <div class="flex-between"><h3>All Users — grouped by Level & Section</h3><div><button class="close-btn" onclick="closePanel('studentsList')">✕</button></div></div>
-      <div id="usersGrouped" class="muted">Loading users...</div>
-    </section>
-
-    <section id="addGrade" class="card hidden">
-      <div class="flex-between"><h3>Add / Update Grade</h3><button class="close-btn" onclick="closePanel('addGrade')">✕</button></div>
-      <div class="muted">Enter student email, subject, level, section, and grade.</div>
-      <div class="row">
-        <input id="agStudentEmail" placeholder="Student email">
-        <input id="agStudentName" placeholder="Student name (optional)">
-        <select id="agLevel" class="small"><option value="">Level</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
-        <select id="agSection" class="small"><option value="">Section</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
-      </div>
-      <div class="row">
-        <input id="agSubject" placeholder="Subject">
-        <input id="agGrade" placeholder="Grade (0-100)" type="number" class="small">
-        <button onclick="adminAddOrUpdateGrade()">Save Grade</button>
-      </div>
-      <div id="addGradeMsg" class="muted"></div>
-    </section>
-
-    <section id="deleteGrade" class="card hidden">
-      <div class="flex-between"><h3>Delete Grade</h3><button class="close-btn" onclick="closePanel('deleteGrade')">✕</button></div>
-      <div id="gradesListForDelete" style="margin-top:10px">Loading grades...</div>
-    </section>
-
-    <section id="addAdmin" class="card hidden">
-      <div class="flex-between"><h3>Create New Admin</h3><button class="close-btn" onclick="closePanel('addAdmin')">✕</button></div>
-      <div class="row">
-        <input id="newAdminEmail" placeholder="Admin email">
-        <input id="newAdminPassword" placeholder="Password" class="small" type="password">
-        <button onclick="createAdmin()">Create Admin</button>
-      </div>
-      <div id="addAdminMsg" class="muted"></div>
-    </section>
-
-    <section id="deleteMember" class="card hidden">
-      <div class="flex-between"><h3>Delete Member</h3><button class="close-btn" onclick="closePanel('deleteMember')">✕</button></div>
-      <div class="muted">Deleting removes the user's profile and grades (Auth account still exists).</div>
-      <div id="membersTableWrap" style="margin-top:10px">Loading members...</div>
-    </section>
-
-    <section id="myInfo" class="card hidden">
-      <div class="flex-between"><h3>My Information</h3><button class="close-btn" onclick="closePanel('myInfo')">✕</button></div>
-      <label>Email (cannot change)</label><input id="miEmail" readonly>
-      <label>Name</label><input id="miName">
-      <label>Mobile</label><input id="miMobile">
-      <label>Purok</label><input id="miPurok">
-      <label>Parent/Guardian</label><input id="miGuardian">
-      <label>Parent/Guardian Phone</label><input id="miGuardianPhone">
-      <div class="row"><button onclick="saveMyInfo()">Save My Profile</button><button class="ghost" onclick="closePanel('myInfo')">Close</button></div>
-      <div id="myInfoMsg" class="muted"></div>
-    </section>
-
-    <section id="myGrades" class="card hidden">
-      <div class="flex-between"><h3>My Grades</h3><button class="close-btn" onclick="closePanel('myGrades')">✕</button></div>
-      <div id="myGradesTableWrap">Loading grades...</div>
-    </section>
-
-  </main>
+<!-- Side Menu -->
+<div id="sideMenu">
+  <button class="closeBtn" onclick="closeMenu()">❌</button>
+  <button onclick="showPanel('gradesPanel')">📊 Grades</button>
+  <button onclick="showPanel('usersPanel')">👥 All Users</button>
+  <button onclick="showPanel('addAdminPanel')">➕ Add Admin</button>
+  <button onclick="showPanel('deletePanel')">🗑️ Delete Member</button>
+  <button onclick="showPanel('infoPanel')">⚙️ My Info</button>
+  <button onclick="logout()">🚪 Logout</button>
 </div>
 
-<!-- confirmation overlay -->
-<div id="confirmOverlay" class="confirm-overlay">
-  <div class="confirm-box">
-    <h3 id="confirmTitle">Confirm</h3>
-    <p id="confirmText">Are you sure?</p>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-      <button onclick="confirmCancel()" class="ghost">Cancel</button>
-      <button id="confirmYesBtn" onclick="confirmYes()" class="danger">Yes, delete</button>
+<!-- Signup Form -->
+<div id="signupDiv">
+  <h2>Signup</h2>
+  <input type="email" id="signupEmail" placeholder="Email">
+  <input type="password" id="signupPassword" placeholder="Password">
+  <button type="button" id="togglePassword">Show Password</button>
+  <div class="strength" id="passwordStrength">Password strength: </div>
+  <button onclick="signup()">Sign Up</button>
+  <p>Already have account? <a href="#" onclick="toggleLogin()">Login here</a></p>
+</div>
+
+<!-- Login Form -->
+<div id="loginDiv" style="display:none;">
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email">
+  <input type="password" id="loginPassword" placeholder="Password">
+  <button type="button" id="toggleLoginPassword">Show Password</button>
+  <button onclick="login()">Login</button>
+  <p>Don’t have account? <a href="#" onclick="toggleSignup()">Signup here</a></p>
+</div>
+
+<!-- Panels -->
+<div id="gradesPanel" class="panel">
+  <button class="closePanel" onclick="closePanel('gradesPanel')">❌ Close</button>
+  <h2>Grades</h2>
+  <table id="gradesTable">
+    <thead>
+      <tr><th>Student</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Remarks</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3>Add / Update Grade</h3>
+  <input type="text" id="studentName" placeholder="Student Name">
+  <select id="studentLevel">
+    <option value="">Select Level</option>
+    <option value="7">7</option><option value="8">8</option>
+    <option value="9">9</option><option value="10">10</option>
+    <option value="11">11</option><option value="12">12</option>
+  </select>
+  <select id="studentSection">
+    <option value="">Select Section</option>
+    <option value="A">A</option><option value="B">B</option>
+    <option value="C">C</option><option value="D">D</option>
+  </select>
+  <input type="text" id="studentSubject" placeholder="Subject">
+  <input type="number" id="studentGrade" placeholder="Grade">
+  <button onclick="addOrUpdateGrade()">Add / Update Grade</button>
     </div>
-  </div>
+
+  <!-- Users Panel -->
+<div id="usersPanel" class="panel">
+  <button class="closePanel" onclick="closePanel('usersPanel')">❌ Close</button>
+  <h2>All Users</h2>
+  <ul id="usersList"></ul>
+</div>
+
+<!-- Add Admin Panel -->
+<div id="addAdminPanel" class="panel">
+  <button class="closePanel" onclick="closePanel('addAdminPanel')">❌ Close</button>
+  <h2>Add Admin</h2>
+  <input type="email" id="newAdminEmail" placeholder="Enter user email">
+  <button onclick="addAdmin()">Add Admin</button>
+</div>
+
+<!-- Delete Member Panel -->
+<div id="deletePanel" class="panel">
+  <button class="closePanel" onclick="closePanel('deletePanel')">❌ Close</button>
+  <h2>Delete Member</h2>
+  <input type="email" id="deleteEmail" placeholder="Enter user email">
+  <button onclick="deleteMember()">Delete</button>
+</div>
+
+<!-- Info Panel -->
+<div id="infoPanel" class="panel">
+  <button class="closePanel" onclick="closePanel('infoPanel')">❌ Close</button>
+  <h2>My Info</h2>
+  <input type="text" id="userName" placeholder="Your name">
+  <input type="text" id="userLevel" placeholder="Your level">
+  <input type="text" id="userSection" placeholder="Your section">
+  <button onclick="saveInfo()">Save Info</button>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+  // Import Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+           signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import { getFirestore, collection, setDoc, doc, getDocs, getDoc, updateDoc, deleteDoc } 
+          from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-/* ===== replace config only if different ===== */
-const firebaseConfig = {
-  apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
-  authDomain: "test-9c727.firebaseapp.com",
-  projectId: "test-9c727",
-  storageBucket: "test-9c727.firebasestorage.app",
-  messagingSenderId: "198578631587",
-  appId: "1:198578631587:web:c0831122f964d46149e016"
-};
-/* ============================================ */
+  // Your Firebase config (replace with yours)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+    authDomain: "test-9c727.firebaseapp.com",
+    projectId: "test-9c727",
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-/* UI refs & state */
-const sidebar = document.getElementById('sidebar');
-const hamburgerBtn = document.getElementById('hamburgerBtn');
-const welcomeText = document.getElementById('welcomeText');
-const logoutBtn = document.getElementById('logoutBtn');
-const confirmOverlay = document.getElementById('confirmOverlay');
+  // Menu functions
+  function openMenu(){ document.getElementById("sideMenu").style.width="250px"; }
+  function closeMenu(){ document.getElementById("sideMenu").style.width="0"; }
 
-let currentUser = null;
-window._confirmYes = null;
-
-hamburgerBtn.addEventListener('click', ()=> sidebar.classList.toggle('open'));
-function showAuth(which){ document.getElementById('signupForm').classList.toggle('hidden', which!=='signup'); document.getElementById('loginForm').classList.toggle('hidden', which!=='login'); }
-showAuth('signup');
-
-function openPanel(id){
-  document.querySelectorAll('main section.card').forEach(p=>p.classList.add('hidden'));
-  const panel = document.getElementById(id);
-  if(panel) panel.classList.remove('hidden');
-  sidebar.classList.remove('open');
-  if(id==='studentsList') loadUsersGrouped();
-  if(id==='deleteMember') loadMembersTable();
-  if(id==='deleteGrade') loadGradesForDelete();
-  if(id==='myGrades') loadMyGrades();
-}
-function closePanel(id){ document.getElementById(id)?.classList.add('hidden'); }
-
-/* Confirm overlay functions */
-function showConfirm(title,text,yesCallback){
-  document.getElementById('confirmTitle').innerText = title;
-  document.getElementById('confirmText').innerText = text;
-  confirmOverlay.style.display = 'flex';
-  window._confirmYes = yesCallback;
-}
-function confirmCancel(){ confirmOverlay.style.display='none'; window._confirmYes=null; }
-function confirmYes(){ confirmOverlay.style.display='none'; if(window._confirmYes) window._confirmYes(); window._confirmYes=null; }
-
-/* util */
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-function phoneLooksReal(s){ if(!s) return false; const d = s.replace(/\D/g,''); return d.length>=7 && d.length<=15; }
-
-/* -------------------------
-   AUTH: Signup / Login / Logout
-   ------------------------- */
-window.signup = async ()=>{
-  const name = document.getElementById('suName').value.trim();
-  const email = document.getElementById('suEmail').value.trim();
-  const pwd = document.getElementById('suPassword').value;
-  const mobile = document.getElementById('suMobile').value.trim();
-  const purok = document.getElementById('suPurok').value.trim();
-  const guardian = document.getElementById('suGuardian').value.trim();
-  const guardianPhone = document.getElementById('suGuardianPhone').value.trim();
-  const level = document.getElementById('suLevel').value;
-  const section = document.getElementById('suSection').value;
-
-  const msgEl = document.getElementById('signupMsg');
-  msgEl.innerText = '';
-
-  if(!name||!email||!pwd){ msgEl.innerText='Fill required fields'; return; }
-  if(pwd.length < 6){ msgEl.innerText='Password must be 6+ chars'; return; }
-  if(mobile && !phoneLooksReal(mobile)){ msgEl.innerText='Mobile looks invalid'; return; }
-  if(guardianPhone && !phoneLooksReal(guardianPhone)){ msgEl.innerText='Guardian phone invalid'; return; }
-
-  try{
-    const cred = await createUserWithEmailAndPassword(auth,email,pwd);
-    await setDoc(doc(db,'users',cred.user.uid), { name, email, mobile, purok, guardian, guardianPhone, level, section, createdAt: serverTimestamp() });
-    msgEl.innerText = 'Signup success — you can now login.';
-    showAuth('login');
-  }catch(err){
-    msgEl.innerText = 'Error: '+err.message;
+  // Panel functions
+  function showPanel(id){
+    document.querySelectorAll('.panel').forEach(p=>p.style.display="none");
+    document.getElementById(id).style.display="block";
+    closeMenu();
   }
-};
+  function closePanel(id){ document.getElementById(id).style.display="none"; }
 
-window.login = async ()=>{
-  const email = document.getElementById('liEmail').value.trim();
-  const pwd = document.getElementById('liPassword').value;
-  document.getElementById('loginMsg').innerText = '';
-  if(!email||!pwd){ document.getElementById('loginMsg').innerText='Fill required fields'; return; }
-  try{
-    await signInWithEmailAndPassword(auth,email,pwd);
-  }catch(err){
-    document.getElementById('loginMsg').innerText = 'Login failed: '+err.message;
+  // Switch forms
+  window.toggleLogin = ()=>{ document.getElementById("signupDiv").style.display="none"; document.getElementById("loginDiv").style.display="block"; }
+  window.toggleSignup = ()=>{ document.getElementById("loginDiv").style.display="none"; document.getElementById("signupDiv").style.display="block"; }
+
+  // Signup
+  window.signup = async ()=>{
+    const email=document.getElementById("signupEmail").value;
+    const password=document.getElementById("signupPassword").value;
+    try{
+      await createUserWithEmailAndPassword(auth,email,password);
+      alert("Signup successful! Please login.");
+      toggleLogin();
+    }catch(e){ alert(e.message); }
   }
-};
 
-window.logout = async ()=>{
-  await signOut(auth);
-  currentUser = null;
-  welcomeText.innerText = '';
-  logoutBtn.classList.add('hidden');
-  document.getElementById('authCard').classList.remove('hidden');
-  document.querySelectorAll('main section.card').forEach(p=>p.classList.add('hidden'));
-  sidebar.classList.remove('open');
-};
+  // Login
+  window.login = async ()=>{
+    const email=document.getElementById("loginEmail").value;
+    const password=document.getElementById("loginPassword").value;
+    try{
+      await signInWithEmailAndPassword(auth,email,password);
+    }catch(e){ alert(e.message); }
+  }
 
-/* -------------------------
-   onAuthStateChanged: load role & show UI
-   ------------------------- */
-onAuthStateChanged(auth, async (user)=>{
-  if(user){
-    currentUser = user;
-    logoutBtn.classList.remove('hidden');
-    const userDocRef = doc(db,'users',user.uid);
-    const userSnap = await getDoc(userDocRef);
-    if(!userSnap.exists()){
-      alert('Your account has been removed from the website. Contact admin.');
-      await signOut(auth);
-      return;
+  // Logout
+  window.logout = async ()=>{
+    await signOut(auth);
+    document.getElementById("loginDiv").style.display="block";
+    document.getElementById("signupDiv").style.display="none";
+    document.querySelectorAll('.panel').forEach(p=>p.style.display="none");
+  }
+
+  // Auth state
+  onAuthStateChanged(auth, user=>{
+    if(user){
+      document.getElementById("loginDiv").style.display="none";
+      document.getElementById("signupDiv").style.display="none";
+      showPanel("gradesPanel");
+    }else{
+      document.getElementById("loginDiv").style.display="block";
+      document.getElementById("signupDiv").style.display="none";
     }
-    const data = userSnap.data();
-    welcomeText.innerText = `Hi, ${data.name || user.email} — ${data.level}`;
-    document.getElementById('authCard').classList.add('hidden');
-    sidebar.classList.add('open');
-    if(data.level === 'admin') openPanel('studentsList'); else openPanel('myInfo');
-  } else {
-    currentUser = null;
-    welcomeText.innerText = '';
-    logoutBtn.classList.add('hidden');
-    document.getElementById('authCard').classList.remove('hidden');
-    sidebar.classList.remove('open');
-    document.querySelectorAll('main section.card').forEach(p=>p.classList.add('hidden'));
+  });
+
+  // Add or update grade
+  window.addOrUpdateGrade = async ()=>{
+    const name=document.getElementById("studentName").value;
+    const level=document.getElementById("studentLevel").value;
+    const section=document.getElementById("studentSection").value;
+    const subject=document.getElementById("studentSubject").value;
+    const grade=document.getElementById("studentGrade").value;
+
+    if(!name || !level || !section || !subject || !grade){ alert("Fill all fields!"); return; }
+
+    const ref=doc(db,"grades",`${name}_${subject}`);
+    await setDoc(ref,{name,level,section,subject,grade});
+    alert("Grade added/updated!");
+    loadGrades();
   }
-});
 
-/* -------------------------
-   Admin: Users grouped by level/section
-   ------------------------- */
-async function loadUsersGrouped(){
-  const wrap = document.getElementById('usersGrouped');
-  wrap.innerHTML = 'Loading...';
-  const snaps = await getDocs(collection(db,'users'));
-  if(snaps.empty){ wrap.innerText = 'No users yet.'; return; }
-  const groups = {};
-  snaps.forEach(s=>{
-    const d = s.data(); const id = s.id;
-    const lvl = d.level || 'Unknown'; const sec = d.section || '—';
-    groups[lvl] = groups[lvl] || {}; groups[lvl][sec] = groups[lvl][sec] || [];
-    groups[lvl][sec].push({ id, ...d });
-  });
-  let html = '';
-  for(const lvl of Object.keys(groups).sort()){
-    html += `<h4>Level ${escapeHtml(lvl)}</h4>`;
-    for(const sec of Object.keys(groups[lvl]).sort()){
-      html += `<h5>Section ${escapeHtml(sec)}</h5>`;
-      html += `<table><thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Purok</th><th>Guardian</th><th>Guardian Phone</th><th>Edit</th></tr></thead><tbody>`;
-      groups[lvl][sec].forEach(u=>{
-        html += `<tr>
-          <td>${escapeHtml(u.name||'')}</td><td>${escapeHtml(u.email||'')}</td><td>${escapeHtml(u.mobile||'')}</td><td>${escapeHtml(u.purok||'')}</td>
-          <td>${escapeHtml(u.guardian||'')}</td><td>${escapeHtml(u.guardianPhone||'')}</td>
-          <td><button onclick="openEditUser('${u.id}')">Edit</button> <button onclick="makeAdmin('${u.id}')">Make Admin</button></td>
-        </tr>`;
-      });
-      html += `</tbody></table>`;
-    }
+  async function loadGrades(){
+    const tbody=document.querySelector("#gradesTable tbody");
+    tbody.innerHTML="";
+    const snap=await getDocs(collection(db,"grades"));
+    snap.forEach(docu=>{
+      const d=docu.data();
+      const remarks=(d.grade>=75)?"✅ Passed":"❌ Failed";
+      const row=`<tr>
+        <td>${d.name}</td><td>${d.level}</td><td>${d.section}</td>
+        <td>${d.subject}</td><td>${d.grade}</td><td>${remarks}</td>
+      </tr>`;
+      tbody.innerHTML+=row;
+    });
   }
-  wrap.innerHTML = html;
-}
+  loadGrades();
 
-/* Admin: edit user (prompt style) */
-window.openEditUser = async (uid)=>{
-  const snap = await getDoc(doc(db,'users',uid));
-  if(!snap.exists()){ alert('User not found'); return; }
-  const d = snap.data();
-  const name = prompt('Name', d.name || ''); if(name===null) return;
-  const mobile = prompt('Mobile', d.mobile || ''); if(mobile===null) return;
-  const purok = prompt('Purok', d.purok || ''); if(purok===null) return;
-  const guardian = prompt('Guardian', d.guardian || ''); if(guardian===null) return;
-  const guardianPhone = prompt('Guardian Phone', d.guardianPhone || ''); if(guardianPhone===null) return;
-  if(mobile && !phoneLooksReal(mobile)){ alert('Mobile invalid'); return; }
-  if(guardianPhone && !phoneLooksReal(guardianPhone)){ alert('Guardian phone invalid'); return; }
-  await updateDoc(doc(db,'users',uid), { name, mobile, purok, guardian, guardianPhone });
-  alert('User updated'); loadUsersGrouped();
-};
-
-/* Admin: make user admin */
-window.makeAdmin = async (uid)=>{
-  if(!confirm('Promote to admin?')) return;
-  await updateDoc(doc(db,'users',uid), { level: 'admin' });
-  alert('Promoted'); loadUsersGrouped();
-};
-
-  /* -------------------------
-   Admin: Add / Update Grade
-   ------------------------- */
-window.adminAddOrUpdateGrade = async ()=>{
-  const email = document.getElementById('agStudentEmail').value.trim();
-  const sname = document.getElementById('agStudentName').value.trim();
-  const level = document.getElementById('agLevel').value;
-  const section = document.getElementById('agSection').value;
-  const subject = document.getElementById('agSubject').value.trim();
-  const grade = document.getElementById('agGrade').value.trim();
-  const msg = document.getElementById('addGradeMsg'); msg.innerText='';
-
-  if(!email || !level || !section || !subject || grade === ''){ msg.innerText='Fill all grade fields'; return; }
-  const q = query(collection(db,'users'), where('email','==', email));
-  const snaps = await getDocs(q);
-  if(snaps.empty){ msg.innerText='Student email not found'; return; }
-  let studentUid='', studentName = sname;
-  snaps.forEach(s=>{ studentUid = s.id; if(!studentName) studentName = s.data().name || ''; });
-
-  const gq = query(collection(db,'grades'), where('studentUid','==',studentUid), where('subject','==',subject), where('level','==',level), where('section','==',section));
-  const gsn = await getDocs(gq);
-  if(!gsn.empty){
-    gsn.forEach(async gdoc => { await updateDoc(doc(db,'grades',gdoc.id), { grade, updatedAt: serverTimestamp() }); });
-    msg.innerText = 'Grade updated';
-  } else {
-    await addDoc(collection(db,'grades'), { studentUid, studentEmail: email, studentName, subject, level, section, grade, createdAt: serverTimestamp() });
-    msg.innerText = 'Grade added';
+  // Add Admin
+  window.addAdmin=async()=>{
+    const email=document.getElementById("newAdminEmail").value;
+    if(!email) return alert("Enter email");
+    await setDoc(doc(db,"admins",email),{email});
+    alert("Admin added!");
   }
-  loadGradesForDelete();
-};
 
-/* -------------------------
-   Admin: list grades for delete
-   ------------------------- */
-async function loadGradesForDelete(){
-  const wrap = document.getElementById('gradesListForDelete');
-  wrap.innerHTML = 'Loading...';
-  const snaps = await getDocs(collection(db,'grades'));
-  if(snaps.empty){ wrap.innerHTML = 'No grades yet'; return; }
-  let html = `<table><thead><tr><th>Student</th><th>Email</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Action</th></tr></thead><tbody>`;
-  snaps.forEach(s=>{
-    const d = s.data();
-    html += `<tr>
-      <td>${escapeHtml(d.studentName||'')}</td><td>${escapeHtml(d.studentEmail||'')}</td><td>${escapeHtml(d.level||'')}</td>
-      <td>${escapeHtml(d.section||'')}</td><td>${escapeHtml(d.subject||'')}</td><td>${escapeHtml(d.grade||'')}</td>
-      <td><button class="danger" onclick="deleteGradeById('${s.id}')">Delete</button></td>
-    </tr>`;
-  });
-  html += `</tbody></table>`;
-  wrap.innerHTML = html;
-}
-window.deleteGradeById = async (id)=>{
-  if(!confirm('Delete this grade?')) return;
-  await deleteDoc(doc(db,'grades',id));
-  alert('Grade deleted'); loadGradesForDelete();
-};
+  // Delete Member
+  window.deleteMember=async()=>{
+    const email=document.getElementById("deleteEmail").value;
+    if(!email) return alert("Enter email");
+    await deleteDoc(doc(db,"users",email));
+    alert("Member deleted!");
+  }
 
-/* -------------------------
-   Admin: Create Admin (auth + user doc)
-   ------------------------- */
-window.createAdmin = async ()=>{
-  const email = document.getElementById('newAdminEmail').value.trim();
-  const pwd = document.getElementById('newAdminPassword').value;
-  const msg = document.getElementById('addAdminMsg'); msg.innerText='';
-  if(!email || !pwd || pwd.length < 6){ msg.innerText = 'Provide email and password (6+)'; return; }
-  try{
-    const cred = await createUserWithEmailAndPassword(auth,email,pwd);
-    await setDoc(doc(db,'users',cred.user.uid), { name:'Admin', email, mobile:'', purok:'', guardian:'', guardianPhone:'', level:'admin', section:'', createdAt: serverTimestamp() });
-    msg.innerText = 'Admin created';
-    document.getElementById('newAdminEmail').value=''; document.getElementById('newAdminPassword').value='';
-    loadUsersGrouped();
-    loadMembersTable();
-  }catch(err){ msg.innerText = 'Error: '+err.message; }
-};
-
-  /* -------------------------
-   Admin: Delete Member (remove user doc + their grades)
-   ------------------------- */
-async function loadMembersTable(){
-  const wrap = document.getElementById('membersTableWrap');
-  wrap.innerHTML = 'Loading...';
-  const snaps = await getDocs(collection(db,'users'));
-  if(snaps.empty){ wrap.innerText = 'No members'; return; }
-  let html = `<table><thead><tr><th>Name</th><th>Email</th><th>Level</th><th>Section</th><th>Action</th></tr></thead><tbody>`;
-  snaps.forEach(s=>{
-    const d = s.data();
-    html += `<tr><td>${escapeHtml(d.name||'')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(d.level||'')}</td><td>${escapeHtml(d.section||'')}</td>
-      <td><button class="danger" onclick="askDeleteMember('${s.id}','${escapeHtml(d.name||'')}')">Delete</button></td></tr>`;
-  });
-  html += `</tbody></table>`;
-  wrap.innerHTML = html;
-}
-window.askDeleteMember = (uid, name)=>{
-  showConfirm('Delete member', `Are you sure you want to delete "${name}"? This removes their profile and grades.`, async ()=>{
-    await deleteDoc(doc(db,'users',uid));
-    const gq = query(collection(db,'grades'), where('studentUid','==',uid));
-    const gsn = await getDocs(gq);
-    for(const g of gsn.docs) await deleteDoc(doc(db,'grades',g.id));
-    alert('Member removed from site (Firestore). Their Auth account still exists.');
-    loadMembersTable(); loadUsersGrouped(); loadGradesForDelete();
-  });
-};
-
-/* -------------------------
-   Student: My Info & My Grades
-   ------------------------- */
-window.openMyInfo = async ()=>{
-  if(!currentUser) return;
-  openPanel('myInfo');
-  const snap = await getDoc(doc(db,'users',currentUser.uid));
-  if(!snap.exists()){ alert('Profile missing (contact admin)'); return; }
-  const d = snap.data();
-  document.getElementById('miEmail').value = d.email || currentUser.email;
-  document.getElementById('miName').value = d.name || '';
-  document.getElementById('miMobile').value = d.mobile || '';
-  document.getElementById('miPurok').value = d.purok || '';
-  document.getElementById('miGuardian').value = d.guardian || '';
-  document.getElementById('miGuardianPhone').value = d.guardianPhone || '';
-};
-window.saveMyInfo = async ()=>{
-  if(!currentUser) return alert('Not logged in');
-  const name = document.getElementById('miName').value.trim();
-  const mobile = document.getElementById('miMobile').value.trim();
-  const purok = document.getElementById('miPurok').value.trim();
-  const guardian = document.getElementById('miGuardian').value.trim();
-  const guardianPhone = document.getElementById('miGuardianPhone').value.trim();
-  if(!name) { document.getElementById('myInfoMsg').innerText='Name required'; return; }
-  if(mobile && !phoneLooksReal(mobile)){ document.getElementById('myInfoMsg').innerText='Mobile invalid'; return; }
-  if(guardianPhone && !phoneLooksReal(guardianPhone)){ document.getElementById('myInfoMsg').innerText='Guardian phone invalid'; return; }
-  await updateDoc(doc(db,'users',currentUser.uid), { name, mobile, purok, guardian, guardianPhone, updatedAt: serverTimestamp() });
-  document.getElementById('myInfoMsg').innerText = 'Saved';
-  const fresh = await getDoc(doc(db,'users',currentUser.uid));
-  welcomeText.innerText = `Hi, ${fresh.data().name || currentUser.email} — ${fresh.data().level}`;
-};
-
-/* My Grades */
-async function loadMyGrades(){
-  if(!currentUser) return;
-  const wrap = document.getElementById('myGradesTableWrap'); wrap.innerHTML = 'Loading...';
-  const gq = query(collection(db,'grades'), where('studentUid','==',currentUser.uid));
-  const snaps = await getDocs(gq);
-  if(snaps.empty){ wrap.innerHTML = 'No grades yet'; return; }
-  let html = `<table><thead><tr><th>Subject</th><th>Level</th><th>Section</th><th>Grade</th></tr></thead><tbody>`;
-  snaps.forEach(s=>{
-    const d = s.data();
-    html += `<tr><td>${escapeHtml(d.subject||'')}</td><td>${escapeHtml(d.level||'')}</td><td>${escapeHtml(d.section||'')}</td><td>${escapeHtml(d.grade||'')}</td></tr>`;
-  });
-  html += `</tbody></table>`; wrap.innerHTML = html;
-}
-
-/* Expose small helpers for console if needed */
-window.openPanel = openPanel; window.closePanel = closePanel;
-
+  // Save Info
+  window.saveInfo=async()=>{
+    const user=auth.currentUser;
+    if(!user) return;
+    const name=document.getElementById("userName").value;
+    const level=document.getElementById("userLevel").value;
+    const section=document.getElementById("userSection").value;
+    await setDoc(doc(db,"users",user.uid),{name,level,section});
+    alert("Info saved!");
+  }
 </script>
+
 </body>
-</html>
+    </html>
