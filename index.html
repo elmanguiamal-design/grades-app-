@@ -80,7 +80,7 @@ table, th, td { border:1px solid black; padding:5px; text-align:center; }
         </tr>
       </thead>
       <tbody></tbody>
-  </table>
+    </table>
 
     <!-- Add/Edit Grades -->
     <h3>Edit/Add Grades</h3>
@@ -181,8 +181,9 @@ zoomBtn.addEventListener("click", ()=>{ const t=document.getElementById("gradesT
 // Exporting functions to window for HTML buttons
 window.showLogin = showLogin;
 window.showSignup = showSignup;
-</script>
-<script type="module">
+      </script>
+
+  <script type="module">
 // --- Signup ---
 window.signup = async ()=>{
   const email = document.getElementById("signupEmail").value;
