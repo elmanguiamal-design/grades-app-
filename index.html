@@ -1,114 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>DANHS School Grades</title>
+<meta charset="utf-8" />
+<title>DANHS School Grades — Full</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-body { font-family: Arial; padding: 20px; }
-input, select, button { display: block; margin: 5px 0; padding: 8px; }
-table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-table { margin-top: 10px; width: 100%; }
-#adminPanel, #gradesContainer, #logoutBtn { display:none; }
-.strength { font-size: 12px; color: red; }
+  body { font-family: Arial, sans-serif; padding: 18px; background:#f4f6f8; }
+  h1{margin-bottom:6px}
+  input, select, button, textarea { display:block; margin:6px 0; padding:8px; font-size:14px; width:100%; max-width:520px; box-sizing:border-box; }
+  table { width:100%; max-width:1100px; border-collapse:collapse; background:white; margin-top:10px; }
+  th,td { border:1px solid #ddd; padding:8px; text-align:left; }
+  .hidden{display:none;}
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .small { width:150px; }
+  .muted{color:#555;font-size:13px}
+  .danger{color:#b00020}
+  .card{background:white;padding:12px;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,0.05);margin-bottom:12px; max-width:1100px}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
-
 <h1>DANHS School Grades</h1>
+<div id="welcome" class="muted"></div>
 
-<!-- Signup Form -->
-<div id="signupDiv">
-  <h2>Signup</h2>
-  <input type="email" id="signupEmail" placeholder="Email">
-  <input type="password" id="signupPassword" placeholder="Password">
-  <button type="button" id="togglePassword">Show Password</button>
-  <div class="strength" id="passwordStrength">Password strength: </div>
-  <button onclick="signup()">Sign Up</button>
+<!-- AUTH UI -->
+<div id="authContainer" class="card">
+  <div id="signupBox">
+    <h3>Signup</h3>
+    <input id="signupName" placeholder="Full name">
+    <input id="signupEmail" type="email" placeholder="Email">
+    <input id="signupPassword" type="password" placeholder="Password (min 6 chars)">
+    <div class="row">
+      <button id="signupBtn" onclick="signup()">Sign up</button>
+      <button id="goLoginBtn" onclick="showLogin()">I already have account</button>
+    </div>
+    <div id="signupMsg" class="muted"></div>
+  </div>
+
+  <div id="loginBox" class="hidden">
+    <h3>Login</h3>
+    <input id="loginEmail" type="email" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <div class="row">
+      <button onclick="login()">Login</button>
+      <button onclick="showSignup()">Create account</button>
+    </div>
+    <div id="loginMsg" class="muted"></div>
+  </div>
 </div>
 
-<!-- Login Form -->
-<div id="loginDiv">
-  <h2>Login</h2>
-  <input type="email" id="loginEmail" placeholder="Email">
-  <input type="password" id="loginPassword" placeholder="Password">
-  <button type="button" id="toggleLoginPassword">Show Password</button>
-  <button onclick="login()">Login</button>
+<!-- Logged actions -->
+<div id="controls" class="card hidden">
+  <div class="flex-between">
+    <div>
+      <button id="profileBtn" onclick="openProfile()">My Profile</button>
+      <button id="logoutBtn" onclick="logout()">Logout</button>
+    </div>
+    <div id="adminControls" class="hidden">
+      <button onclick="reloadAll()">Refresh Data</button>
+    </div>
+  </div>
 </div>
 
-<!-- Logout Button -->
-<button id="logoutBtn">Logout</button>
+<!-- MAIN CONTENT -->
+<div id="main" class="hidden">
 
-<hr>
-
-<!-- Main Content -->
-<div id="mainContent">
-
-  <!-- Admin Panel -->
-  <div id="adminPanel">
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel" class="card hidden">
     <h2>Admin Panel</h2>
-    
-    <!-- Users Table -->
-    <h3>All Users</h3>
+
+    <h3>Users (view/edit)</h3>
     <table id="usersTable">
       <thead>
-        <tr>
-          <th>Name</th><th>Email</th><th>Number</th><th>Purok</th>
-          <th>Guardian</th><th>Guardian Phone</th><th>Actions</th>
-        </tr>
+        <tr><th>Name</th><th>Email</th><th>Mobile</th><th>Purok</th><th>Guardian</th><th>Guardian Phone</th><th>Role</th><th>Actions</th></tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <!-- Add/Edit Grades -->
-    <h3>Edit/Add Grades</h3>
-    <input type="text" id="studentName" placeholder="Student Name">
-    <select id="studentLevel">
-      <option value="">Select Level</option>
-      <option value="7">7</option><option value="8">8</option>
-      <option value="9">9</option><option value="10">10</option>
-      <option value="11">11</option><option value="12">12</option>
-    </select>
-    <select id="studentSection">
-      <option value="">Select Section</option>
-      <option value="A">A</option><option value="B">B</option>
-      <option value="C">C</option><option value="D">D</option>
-    </select>
-    <input type="text" id="studentSubject" placeholder="Subject">
-    <input type="number" id="studentGrade" placeholder="Grade">
-    <button onclick="addOrUpdateGrade()">Add / Update Grade</button>
+    <h3 class="muted">Add / Update Grades (admin)</h3>
+    <div class="row">
+      <input id="gStudentEmail" placeholder="Student email (student@example.com)">
+      <input id="gStudentName" placeholder="Student name (optional)">
+      <select id="gLevel" class="small">
+        <option value="">Level</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+      <select id="gSection" class="small">
+        <option value="">Section</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+      </select>
+    </div>
+    <div class="row">
+      <input id="gSubject" placeholder="Subject">
+      <input id="gGrade" type="number" placeholder="Grade (0-100)" class="small">
+      <button onclick="adminAddOrUpdateGrade()">Add / Update Grade</button>
+    </div>
+
   </div>
 
-  <!-- Grades Table for Students -->
-  <div id="gradesContainer">
-    <h2>Grades</h2>
-    <table id="gradesTable">
-      <thead>
-        <tr>
-          <th>Student</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Action</th>
-        </tr>
-      </thead>
+  <!-- STUDENT PANEL -->
+  <div id="studentPanel" class="card hidden">
+    <h2>Your Grades</h2>
+    <table id="studentGradesTable">
+      <thead><tr><th>Subject</th><th>Level</th><th>Section</th><th>Grade</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
 
-  <!-- Profile Settings -->
-  <div id="profileSettings" style="display:none;">
-    <h2>My Information</h2>
-    <input type="text" id="profileName" placeholder="Full Name">
-    <input type="text" id="profileNumber" placeholder="Mobile Number">
-    <input type="text" id="profilePurok" placeholder="Purok">
-    <input type="text" id="profileGuardian" placeholder="Parent/Guardian Name">
-    <input type="text" id="profileGuardianPhone" placeholder="Parent/Guardian Phone">
-    <button onclick="saveProfile()">Save Information</button>
+  <!-- COMMON: grades table for admin (shows actions) -->
+  <div id="gradesAllPanel" class="card hidden">
+    <h2>All Grades (Admin)</h2>
+    <table id="gradesAllTable">
+      <thead><tr><th>Student</th><th>Email</th><th>Level</th><th>Section</th><th>Subject</th><th>Grade</th><th>Action</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- PROFILE MODAL AREA (inline panel for editing own info) -->
+  <div id="profilePanel" class="card hidden">
+    <h2>Profile</h2>
+    <label class="muted">Email (cannot change)</label>
+    <input id="profileEmail" readonly>
+    <label>Name</label>
+    <input id="profileName">
+    <label>Mobile Number</label>
+    <input id="profileMobile" placeholder="e.g. 09171234567">
+    <label>Purok</label>
+    <input id="profilePurok">
+    <label>Parent / Guardian</label>
+    <input id="profileGuardian">
+    <label>Parent / Guardian Phone</label>
+    <input id="profileGuardianPhone">
+    <div class="row">
+      <button onclick="saveMyProfile()">Save My Profile</button>
+      <button onclick="closeProfile()">Close</button>
+    </div>
   </div>
 
 </div>
 
 <script type="module">
+/* =========================
+   Firebase & app logic
+   ========================= */
+/* Imports */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
+/* -------- REPLACE WITH YOUR FIREBASE CONFIG -------- */
 const firebaseConfig = {
   apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
   authDomain: "test-9c727.firebaseapp.com",
@@ -117,186 +156,346 @@ const firebaseConfig = {
   messagingSenderId: "198578631587",
   appId: "1:198578631587:web:c0831122f964d46149e016"
 };
+/* -------------------------------------------------- */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- Signup ---
+/* UI refs */
+const authContainer = document.getElementById('authContainer');
+const signupBox = document.getElementById('signupBox');
+const loginBox = document.getElementById('loginBox');
+const controls = document.getElementById('controls');
+const main = document.getElementById('main');
+const adminPanel = document.getElementById('adminPanel');
+const studentPanel = document.getElementById('studentPanel');
+const gradesAllPanel = document.getElementById('gradesAllPanel');
+const profilePanel = document.getElementById('profilePanel');
+const welcome = document.getElementById('welcome');
+
+/* Small helpers */
+function q(id){ return document.getElementById(id); }
+function showLogin(){ signupBox.classList.add('hidden'); loginBox.classList.remove('hidden'); }
+function showSignup(){ loginBox.classList.add('hidden'); signupBox.classList.remove('hidden'); }
+
+/* Basic phone validation (7-15 digits) */
+function phoneLooksReal(s){
+  if(!s) return false;
+  const digits = s.replace(/\D/g,'');
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+/* -------- AUTH: Signup / Login / Logout -------- */
 window.signup = async ()=>{
-  const email = document.getElementById("signupEmail").value;
-  const password = document.getElementById("signupPassword").value;
-  if(password.length < 6){ alert("Password too short"); return; }
+  const name = q('signupName').value.trim();
+  const email = q('signupEmail').value.trim();
+  const pwd = q('signupPassword').value;
+  if(!name || !email || !pwd){ alert('Fill name, email, password'); return; }
+  if(pwd.length < 6){ alert('Password must be at least 6 characters'); return; }
   try{
-    const userCred = await createUserWithEmailAndPassword(auth,email,password);
-    await setDoc(doc(db,"users",userCred.user.uid),{
-      email,
-      level:"7",
-      section:"A",
-      name:"",
-      mobile:"",
-      purok:"",
-      guardian:"",
-      guardianPhone:""
+    const userCred = await createUserWithEmailAndPassword(auth, email, pwd);
+    // create users doc with uid id
+    const udoc = doc(db, 'users', userCred.user.uid);
+    await setDoc(udoc, {
+      name: name,
+      email: email,
+      mobile: '',
+      purok: '',
+      guardian: '',
+      guardianPhone: '',
+      level: '7',
+      section: 'A',
+      createdAt: serverTimestamp()
     });
-    alert("Signup successful!");
-  }catch(err){ alert("Error: "+err.message); }
-}
+    alert('Signup complete — ask admin to promote/change level/section if needed.');
+    q('signupName').value=''; q('signupEmail').value=''; q('signupPassword').value='';
+  }catch(e){
+    alert('Signup error: ' + e.message);
+  }
+};
 
-// --- Login ---
 window.login = async ()=>{
-  const email = document.getElementById("loginEmail").value;
-  const password = document.getElementById("loginPassword").value;
+  const email = q('loginEmail').value.trim();
+  const pwd = q('loginPassword').value;
+  if(!email || !pwd){ alert('Enter email and password'); return; }
   try{
-    await signInWithEmailAndPassword(auth,email,password);
-  }catch(err){ alert("Error: "+err.message); }
-}
+    await signInWithEmailAndPassword(auth, email, pwd);
+    // onAuthStateChanged will handle UI
+  }catch(e){
+    alert('Login failed: ' + e.message);
+  }
+};
 
-// --- Logout ---
-document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+window.logout = async ()=>{
   await signOut(auth);
-  location.reload();
-});
+  // basic UI reset handled by onAuthStateChanged
+};
 
-// --- Auth State ---
-onAuthStateChanged(auth, async (user)=>{
+/* -------- On auth change: render roles -------- */
+onAuthStateChanged(auth, async user => {
   if(user){
-    document.getElementById("signupDiv").style.display="none";
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("logoutBtn").style.display="block";
-    document.getElementById("mainContent").style.display="block";
-    document.getElementById("profileSettings").style.display="block";
-    checkAdmin(user.uid);
-  }else{
-    document.getElementById("signupDiv").style.display="block";
-    document.getElementById("loginDiv").style.display="block";
-    document.getElementById("logoutBtn").style.display="none";
-    document.getElementById("mainContent").style.display="none";
+    // show controls + main
+    controls.classList.remove('hidden');
+    main.classList.remove('hidden');
+    authContainer.classList.add('hidden');
+    // fetch user doc (users/{uid})
+    const userDocRef = doc(db,'users',user.uid);
+    const userSnap = await getDoc(userDocRef);
+    if(!userSnap.exists()){
+      // If user signed up earlier in old system where users might be keyed by auto-id,
+      // try to find by email
+      const qByEmail = query(collection(db,'users'), where('email','==', user.email));
+      const snaps = await getDocs(qByEmail);
+      if(!snaps.empty){
+        // pick first
+        snaps.forEach(s => {
+          const d = s.data();
+          // for convenience, store this doc under uid for future updates
+          setDoc(userDocRef, d).catch(()=>{});
+        });
+      } else {
+        // create default user doc if none exists
+        await setDoc(userDocRef, {
+          name: user.email.split('@')[0],
+          email: user.email,
+          mobile: '',
+          purok: '',
+          guardian: '',
+          guardianPhone: '',
+          level: '7',
+          section: 'A',
+          createdAt: serverTimestamp()
+        });
+      }
+    }
+    // now reload user doc
+    const fresh = await getDoc(userDocRef);
+    const data = fresh.data();
+    welcome.innerText = `Hello, ${data.name || user.email} — ${data.level === 'admin' ? 'Admin' : 'Student'}`;
+    // show/hide panels
+    if(data.level === 'admin'){
+      adminPanel.classList.remove('hidden');
+      gradesAllPanel.classList.remove('hidden');
+      studentPanel.classList.add('hidden');
+      profilePanel.classList.remove('hidden');
+      q('adminControls').classList.remove('hidden');
+      // load admin data
+      await reloadAll();
+    } else {
+      adminPanel.classList.add('hidden');
+      gradesAllPanel.classList.add('hidden');
+      studentPanel.classList.remove('hidden');
+      profilePanel.classList.remove('hidden');
+      q('adminControls').classList.add('hidden');
+      // load student view
+      await loadStudentGrades(user.uid);
+    }
+  } else {
+    // not logged in
+    controls.classList.add('hidden');
+    main.classList.add('hidden');
+    authContainer.classList.remove('hidden');
+    welcome.innerText = '';
   }
 });
 
-// --- Check Admin ---
-async function checkAdmin(uid){
-  const docu = await getDocs(query(collection(db,"users"), where("__name__","==",uid)));
-  docu.forEach(async snap=>{
-    const data = snap.data();
-    if(data.level==="admin"){
-      document.getElementById("adminPanel").style.display="block";
-      loadUsers();
-      loadGradesAll();
-    } else {
-      loadGrades(data.level,data.section);
-    }
-    loadProfile(uid,data);
-  });
-}
-
-// --- Load Users ---
-async function loadUsers(){
-  const tbody = document.querySelector("#usersTable tbody");
-  tbody.innerHTML="";
-  const snapshot = await getDocs(collection(db,"users"));
-  snapshot.forEach(d=>{
-    const data = d.data();
-    const tr = document.createElement("tr");
+/* -------- Admin: load all users table -------- */
+async function loadUsersTable(){
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+  const snaps = await getDocs(collection(db,'users'));
+  snaps.forEach(s => {
+    const d = s.data();
+    const id = s.id;
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${data.name||""}</td>
-      <td>${data.email}</td>
-      <td>${data.mobile||""}</td>
-      <td>${data.purok||""}</td>
-      <td>${data.guardian||""}</td>
-      <td>${data.guardianPhone||""}</td>
-      <td><button onclick="makeAdmin('${d.id}')">Make Admin</button></td>`;
+      <td>${escapeHtml(d.name||'')}</td>
+      <td>${escapeHtml(d.email||'')}</td>
+      <td>${escapeHtml(d.mobile||'')}</td>
+      <td>${escapeHtml(d.purok||'')}</td>
+      <td>${escapeHtml(d.guardian||'')}</td>
+      <td>${escapeHtml(d.guardianPhone||'')}</td>
+      <td>${escapeHtml(d.level||'')}</td>
+      <td>
+        <button onclick="openEditUser('${id}')">Edit</button>
+        <button onclick="makeAdmin('${id}')">Make Admin</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 }
 
-// --- Make Admin ---
-window.makeAdmin = async (id)=>{
-  await updateDoc(doc(db,"users",id), { level: "admin" });
-  alert("User promoted to Admin!");
-  loadUsers();
-}
-
-// --- Load Grades ---
-async function loadGradesAll(){
-  document.getElementById("gradesContainer").style.display="block";
-  const tbody = document.querySelector("#gradesTable tbody");
-  tbody.innerHTML="";
-  const snapshot = await getDocs(collection(db,"grades"));
-  snapshot.forEach(doc=>{
-    const d=doc.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML=`
-      <td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>
-      <td><button onclick="deleteGrade('${doc.id}')">Delete</button></td>`;
-    tbody.appendChild(tr);
+/* Open small prompt to edit a user (admin) */
+window.openEditUser = async (docId) => {
+  const sdoc = await getDoc(doc(db,'users',docId));
+  if(!sdoc.exists()){ alert('User not found'); return; }
+  const d = sdoc.data();
+  // simple prompt-based edit — you can replace with a modal UI later
+  const newName = prompt('Name:', d.name || '');
+  if(newName === null) return; // canceled
+  const newMobile = prompt('Mobile:', d.mobile || '');
+  if(newMobile === null) return;
+  const newPurok = prompt('Purok:', d.purok || '');
+  if(newPurok === null) return;
+  const newGuardian = prompt('Guardian:', d.guardian || '');
+  if(newGuardian === null) return;
+  const newGuardianPhone = prompt('Guardian Phone:', d.guardianPhone || '');
+  if(newGuardianPhone === null) return;
+  // basic validation for phones
+  if(newMobile && !phoneLooksReal(newMobile)){ alert('Mobile looks invalid'); return; }
+  if(newGuardianPhone && !phoneLooksReal(newGuardianPhone)){ alert('Guardian phone invalid'); return; }
+  await updateDoc(doc(db,'users',docId), {
+    name: newName, mobile: newMobile, purok: newPurok, guardian: newGuardian, guardianPhone: newGuardianPhone
   });
-}
+  alert('User updated');
+  loadUsersTable();
+};
 
-async function loadGrades(level,section){
-  document.getElementById("gradesContainer").style.display="block";
-  const tbody = document.querySelector("#gradesTable tbody");
-  tbody.innerHTML="";
-  const q = query(collection(db,"grades"),where("level","==",level),where("section","==",section));
-  const snapshot = await getDocs(q);
-  snapshot.forEach(doc=>{
-    const d=doc.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML=`<td>${d.student}</td><td>${d.level}</td><td>${d.section}</td><td>${d.subject}</td><td>${d.grade}</td>`;
-    tbody.appendChild(tr);
-  });
-}
+/* Promote user to admin */
+window.makeAdmin = async (docId) => {
+  if(!confirm('Promote this user to admin?')) return;
+  await updateDoc(doc(db,'users',docId), { level: 'admin' });
+  alert('User promoted to admin');
+  loadUsersTable();
+};
 
-// --- Add/Update Grade ---
-window.addOrUpdateGrade = async ()=>{
-  const name = document.getElementById("studentName").value;
-  const level = document.getElementById("studentLevel").value;
-  const section = document.getElementById("studentSection").value;
-  const subject = document.getElementById("studentSubject").value;
-  const grade = document.getElementById("studentGrade").value;
-  const q = query(collection(db,"grades"), where("student","==",name), where("subject","==",subject), where("level","==",level), where("section","==",section));
-  const snapshot = await getDocs(q);
-  if(!snapshot.empty){
-    snapshot.forEach(async docu=>{
-      await updateDoc(doc(db,"grades",docu.id),{grade});
+/* -------- Grades: admin add/update/delete & list -------- */
+
+/* Admin adds or updates a grade — admin inputs student email; script finds student uid and name */
+window.adminAddOrUpdateGrade = async ()=>{
+  const se = q('gStudentEmail').value.trim();
+  const sNameInput = q('gStudentName').value.trim();
+  const level = q('gLevel').value;
+  const section = q('gSection').value;
+  const subject = q('gSubject').value.trim();
+  const grade = q('gGrade').value.trim();
+  if(!se || !level || !section || !subject || grade === ''){ alert('Fill student email, level, section, subject, grade'); return; }
+
+  // find user by email
+  const userQ = query(collection(db,'users'), where('email','==', se));
+  const snaps = await getDocs(userQ);
+  if(snaps.empty){ alert('Student email not found in users collection'); return; }
+  let studentUid = null, studentName = sNameInput || '';
+  snaps.forEach(s => { studentUid = s.id; if(!studentName) studentName = s.data().name || ''; });
+
+  // look for an existing grade doc (studentUid, subject, level, section)
+  const gradesQ = query(collection(db,'grades'), where('studentUid','==', studentUid), where('subject','==', subject), where('level','==', level), where('section','==', section));
+  const gSnaps = await getDocs(gradesQ);
+  if(!gSnaps.empty){
+    // update first found
+    gSnaps.forEach(async g => {
+      await updateDoc(doc(db,'grades',g.id), { grade, updatedAt: serverTimestamp() });
     });
-    alert("Grade updated!");
+    alert('Grade updated');
   } else {
-    await addDoc(collection(db,"grades"),{student:name,level,section,subject,grade});
-    alert("Grade added!");
+    await addDoc(collection(db,'grades'), {
+      studentUid, studentEmail: se, studentName, subject, level, section, grade, createdAt: serverTimestamp()
+    });
+    alert('Grade added');
   }
-  loadGradesAll();
-}
+  loadAllGradesTable();
+};
 
-// --- Delete Grade ---
-window.deleteGrade = async (id)=>{
-  await deleteDoc(doc(db,"grades",id));
-  alert("Grade deleted!");
-  loadGradesAll();
-}
-
-// --- Profile ---
-function loadProfile(uid,data){
-  document.getElementById("profileName").value = data.name||"";
-  document.getElementById("profileNumber").value = data.mobile||"";
-  document.getElementById("profilePurok").value = data.purok||"";
-  document.getElementById("profileGuardian").value = data.guardian||"";
-  document.getElementById("profileGuardianPhone").value = data.guardianPhone||"";
-}
-
-window.saveProfile = async ()=>{
-  const user = auth.currentUser;
-  if(!user) return;
-  await updateDoc(doc(db,"users",user.uid),{
-    name: document.getElementById("profileName").value,
-    mobile: document.getElementById("profileNumber").value,
-    purok: document.getElementById("profilePurok").value,
-    guardian: document.getElementById("profileGuardian").value,
-    guardianPhone: document.getElementById("profileGuardianPhone").value
+/* Admin: load all grades */
+async function loadAllGradesTable(){
+  gradesAllPanel.classList.remove('hidden');
+  const tbody = document.querySelector('#gradesAllTable tbody');
+  tbody.innerHTML = '';
+  const snaps = await getDocs(collection(db,'grades'));
+  snaps.forEach(s => {
+    const d = s.data();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(d.studentName||'')}</td>
+                    <td>${escapeHtml(d.studentEmail||'')}</td>
+                    <td>${escapeHtml(d.level||'')}</td>
+                    <td>${escapeHtml(d.section||'')}</td>
+                    <td>${escapeHtml(d.subject||'')}</td>
+                    <td>${escapeHtml(d.grade||'')}</td>
+                    <td><button onclick="deleteGrade('${s.id}')">Delete</button></td>`;
+    tbody.appendChild(tr);
   });
-  alert("Profile updated!");
 }
+
+/* Delete a grade (admin) */
+window.deleteGrade = async (gradeId) => {
+  if(!confirm('Delete this grade?')) return;
+  await deleteDoc(doc(db,'grades',gradeId));
+  alert('Grade deleted');
+  loadAllGradesTable();
+};
+
+/* -------- Student: load their own grades -------- */
+async function loadStudentGrades(uid){
+  studentPanel.classList.remove('hidden');
+  const tbody = document.querySelector('#studentGradesTable tbody');
+  tbody.innerHTML = '';
+  // query grades where studentUid == uid
+  const qg = query(collection(db,'grades'), where('studentUid','==', uid));
+  const snaps = await getDocs(qg);
+  snaps.forEach(s => {
+    const d = s.data();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(d.subject||'')}</td><td>${escapeHtml(d.level||'')}</td><td>${escapeHtml(d.section||'')}</td><td>${escapeHtml(d.grade||'')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* -------- Profile: open, save (student edits own profile) -------- */
+window.openProfile = async () => {
+  profilePanel.classList.remove('hidden');
+  const user = auth.currentUser;
+  if(!user) { alert('Not logged in'); return; }
+  const snap = await getDoc(doc(db,'users',user.uid));
+  if(!snap.exists()){ alert('Profile not found'); return; }
+  const d = snap.data();
+  q('profileEmail').value = d.email || user.email;
+  q('profileName').value = d.name || '';
+  q('profileMobile').value = d.mobile || '';
+  q('profilePurok').value = d.purok || '';
+  q('profileGuardian').value = d.guardian || '';
+  q('profileGuardianPhone').value = d.guardianPhone || '';
+};
+
+window.closeProfile = ()=>{ profilePanel.classList.add('hidden'); };
+
+window.saveMyProfile = async ()=>{
+  const user = auth.currentUser;
+  if(!user) return alert('Not logged in');
+  const name = q('profileName').value.trim();
+  const mobile = q('profileMobile').value.trim();
+  const purok = q('profilePurok').value.trim();
+  const guardian = q('profileGuardian').value.trim();
+  const guardianPhone = q('profileGuardianPhone').value.trim();
+  if(!name){ alert('Name required'); return; }
+  if(mobile && !phoneLooksReal(mobile)){ alert('Mobile looks invalid'); return; }
+  if(guardianPhone && !phoneLooksReal(guardianPhone)){ alert('Guardian phone looks invalid'); return; }
+  await updateDoc(doc(db,'users', user.uid), { name, mobile, purok, guardian, guardianPhone, updatedAt: serverTimestamp() });
+  alert('Profile saved');
+  // refresh panels
+  const fresh = await getDoc(doc(db,'users', user.uid));
+  const data = fresh.data();
+  welcome.innerText = `Hello, ${data.name || user.email} — ${data.level === 'admin' ? 'Admin' : 'Student'}`;
+  if(data.level === 'admin') reloadAll();
+  else loadStudentGrades(user.uid);
+  closeProfile();
+};
+
+/* -------- Utility & reload convenience -------- */
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+
+async function reloadAll(){
+  await loadUsersTable();
+  await loadAllGradesTable();
+}
+
+/* When admin click refresh or initial load */
+window.reloadAll = reloadAll;
+
+/* Make sure main visible (auth state will toggle appropriately) */
+document.getElementById('main').style.display = 'block';
+document.getElementById('controls').classList.add('hidden');
+
+/* End of module */
 </script>
 </body>
-                            </html>
+  </html>
