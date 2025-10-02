@@ -1,516 +1,401 @@
-q('loginEmail').value.trim();
-  const pwd = q('loginPassword').value;
-  if(!email || !pwd){ alert('Enter email and password'); return; }
-  try{
-    await signInWithEmailAndPassword(auth, email, pwd);
-    // onAuthStateChanged will handle UI
-  }catch(e){
-    alert('Login failed: ' + e.message);
-  }
-};
-
-window.logout = async ()=>{
-  await signOut(auth);
-  // basic UI reset handled by onAuthStateChanged
-};
-
-/* -------- On auth change: render roles -------- */
-onAuthStateChanged(auth, async user => {
-  if(user){
-    // show controls + main
-    controls.classList.remove('hidden');
-    main.classList.remove('hidden');
-    authContainer.classList.add('hidden');
-    // fetch user doc (users/{uid})
-    const userDocRef = doc(db,'users',user.uid);
-    const userSnap = await getDoc(userDocRef);
-    if(!userSnap.exists()){
-      // If user signed up earlier in old system where users might be keyed by auto-id,
-      // try to find by email
-      const qByEmail = query(collection(db,'users'), where('email','==', user.email));
-      const snaps = await getDocs(qByEmail);
-      if(!snaps.empty){
-        // pick first
-        snaps.forEach(s => {
-          const d = s.data();
-          // for convenience, store this doc under uid for future updates
-          setDoc(userDocRef, d).catch(()=>{});
-        });
-      } else {
-        // create default user doc if none exists
-        await setDoc(userDocRef, {
-          name: user.email.split('@')[0],
-          email: user.email,
-          mobile: '',
-          purok: '',
-          guardian: '',
-          guardianPhone: '',
-          level: '7',
-          section: 'A',
-          createdAt: serverTimestamp()
-        });
-      }
-    }
-    // now reload user doc
-    const fresh = await getDoc(userDocRef);
-    const data = fresh.data();
-    welcome.innerText = `Hello, ${data.name || user.email} — ${data.level === 'admin' ? 'Admin' : 'Student'}`;
-    // show/hide panels
-    if(data.level === 'admin'){
-      adminPanel.classList.remove('hidden');
-      gradesAllPanel.classList.remove('hidden');
-      studentPanel.classList.add('hidden');
-      profilePanel.classList.remove('hidden');
-      q('adminControls').classList.remove('hidden');
-      // load admin data
-      await reloadAll();
-    } else {
-      adminPanel.classList.add('hidden');
-      gradesAllPanel.classList.add('hidden');
-      studentPanel.classList.remove('hidden');
-      profilePanel.classList.remove('hidden');
-      q('adminControls').classList.add('hidden');
-      // load student view
-      await loadStudentGrades(user.uid);
-    }
-  } else {
-    // not logged in
-    controls.classList.add('hidden');
-    main.classList.add('hidden');
-    authContainer.classList.remove('hidden');
-    welcome.innerText = '';
-  }
-});
-
-/* -------- Admin: load all users table -------- */
-async function loadUsersTable(){
-  const tbody = document.querySelector('#usersTable tbody');
-  tbody.innerHTML = '';
-  const snaps = await getDocs(collection(db,'users'));
-  snaps.forEach(s => {
-    const d = s.data();
-    const id = s.id;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${escapeHtml(d.name||'')}</td>
-      <td>${escapeHtml(d.email||'')}</td>
-      <td>${escapeHtml(d.mobile||'')}</td>
-      <td>${escapeHtml(d.purok||'')}</td>
-      <td>${escapeHtml(d.guardian||'')}</td>
-      <td>${escapeHtml(d.guardianPhone||'')}</td>
-      <td>${escapeHtml(d.level||'')}</td>
-      <td>
-        <button onclick="openEditUser('${id}')">Edit</button>
-        <button onclick="makeAdmin('${id}')">Make Admin</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* Open small prompt to edit a user (admin) */
-window.openEditUser = async (docId) => {
-  const sdoc = await getDoc(doc(db,'users',docId));
-  if(!sdoc.exists()){ alert('User not found'); return; }
-  const d = sdoc.data();
-  // simple prompt-based edit — you can replace with a modal UI later
-  const newName = prompt('Name:', d.name || '');
-  if(newName === null) return; // canceled
-  const newMobile = prompt('Mobile:', d.mobile || '');
-  if(newMobile === null) return;
-  const newPurok = prompt('Purok:', d.purok || '');
-  if(newPurok === null) return;
-  const newGuardian = prompt('Guardian:', d.guardian || '');
-  if(newGuardian === null) return;
-  const newGuardianPhone = prompt('Guardian Phone:', d.guardianPhone || '');
-  if(newGuardianPhone === null) return;
-  // basic validation for phones
-  if(newMobile && !phoneLooksReal(newMobile)){ alert('Mobile looks invalid'); return; }
-  if(newGuardianPhone && !phoneLooksReal(newGuardianPhone)){ alert('Guardian phone invalid'); return; }
-  await updateDoc(doc(db,'users',docId), {
-    name: newName, mobile: newMobile, purok: newPurok, guardian: newGuardian, guardianPhone: newGuardianPhone
-  });
-  alert('User updated');
-  loadUsersTable();
-};
-
-/* Promote user to admin */
-window.makeAdmin = async (docId) => {
-  if(!confirm('Promote this user to admin?')) return;
-  await updateDoc(doc(db,'users',docId), { level: 'admin' });
-  alert('User promoted to admin');
-  loadUsersTable();
-};
-
-/* -------- Grades: admin add/update/delete & list -------- */
-
-/* Admin adds or updates a grade — admin inputs student email; script finds student uid and name */
-window.adminAddOrUpdateGrade = async ()=>{
-  const se = q('gStudentEmail').value.trim();
-  const sNameInput = q('gStudentName').value.trim();
-  const level = q('gLevel').value;
-  const section = q('gSection').value;
-  const subject = q('gSubject').value.trim();
-  const grade = q('gGrade').value.trim();
-  if(!se || !level || !section || !subject || grade === ''){ alert('Fill student email, level, section, subject, grade'); return; }
-
-  // find user by email
-  const userQ = query(collection(db,'users'), where('email','==', se));
-  const snaps = await getDocs(userQ);
-  if(snaps.empty){ alert('Student email not found in users collection'); return; }
-  let studentUid = null, studentName = sNameInput || '';
-  snaps.forEach(s => { studentUid = s.id; if(!studentName) studentName = s.data().name || ''; });
-
-  // look for an existing grade doc (studentUid, subject, level, section)
-  const gradesQ = query(collection(db,'grades'), where('studentUid','==', studentUid), where('subject','==', subject), where('level','==', level), where('section','==', section));
-  const gSnaps = await getDocs(gradesQ);
-  if(!gSnaps.empty){
-    // update first found
-    gSnaps.forEach(async g => {
-      await updateDoc(doc(db,'grades',g.id), { grade, updatedAt: serverTimestamp() });
-    });
-    alert('Grade updated');
-  } else {
-    await addDoc(collection(db,'grades'), {
-      studentUid, studentEmail: se, studentName, subject, level, section, grade, createdAt: serverTimestamp()
-    });
-    alert('Grade added');
-  }
-  loadAllGradesTable();
-};
-
-/* Admin: load all grades */
-async function loadAllGradesTable(){
-  gradesAllPanel.classList.remove('hidden');
-  const tbody = document.querySelector('#gradesAllTable tbody');
-  tbody.innerHTML = '';
-  const snaps = await getDocs(collection(db,'grades'));
-  snaps.forEach(s => {
-    const d = s.data();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(d.studentName||'')}</td>
-                    <td>${escapeHtml(d.studentEmail||'')}</td>
-                    <td>${escapeHtml(d.level||'')}</td>
-                    <td>${escapeHtml(d.section||'')}</td>
-                    <td>${escapeHtml(d.subject||'')}</td>
-                    <td>${escapeHtml(d.grade||'')}</td>
-                    <td><button onclick="deleteGrade('${s.id}')">Delete</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* Delete a grade (admin) */
-window.deleteGrade = async (gradeId) => {
-  if(!confirm('Delete this grade?')) return;
-  await deleteDoc(doc(db,'grades',gradeId));
-  alert('Grade deleted');
-  loadAllGradesTable();
-};
-
-/* -------- Student: load their own grades -------- */
-async function loadStudentGrades(uid){
-  studentPanel.classList.remove('hidden');
-  const tbody = document.querySelector('#studentGradesTable tbody');
-  tbody.innerHTML = '';
-  // query grades where studentUid == uid
-  const qg = query(collection(db,'grades'), where('studentUid','==', uid));
-  const snaps = await getDocs(qg);
-  snaps.forEach(s => {
-    const d = s.data();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(d.subject||'')}</td><td>${escapeHtml(d.level||'')}</td><td>${escapeHtml(d.section||'')}</td><td>${escapeHtml(d.grade||'')}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* -------- Profile: open, save (student edits own profile) -------- */
-window.openProfile = async () => {
-  profilePanel.classList.remove('hidden');
-  const user = auth.currentUser;
-  if(!user) { alert('Not logged in'); return; }
-  const snap = await getDoc(doc(db,'users',user.uid));
-  if(!snap.exists()){ alert('Profile not found'); return; }
-  const d = snap.data();
-  q('profileEmail').value = d.email || user.email;
-  q('profileName').value = d.name || '';
-  q('profileMobile').value = d.mobile || '';
-  q('profilePurok').value = d.purok || '';
-  q('profileGuardian').value = d.guardian || '';
-  q('profileGuardianPhone').value = d.guardianPhone || '';
-};
-
-window.closeProfile = ()=>{ profilePanel.classList.add('hidden'); };
-
-window.saveMyProfile = async ()=>{
-  const user = auth.currentUser;
-  if(!user) return alert('Not logged in');
-  const name = q('profileName').value.trim();
-  const mobile = q('profileMobile').value.trim();
-  const purok = q('profilePurok').value.trim();
-  const guardian = q('profileGuardian').value.trim();
-  const guardianPhone = q('profileGuardianPhone').value.trim();
-  if(!name){ alert('Name required'); return; }
-  if(mobile && !phoneLooksReal(mobile)){ alert('Mobile looks invalid'); return; }
-  if(guardianPhone && !phoneLooksReal(guardianPhone)){ alert('Guardian phone looks invalid'); return; }
-  await updateDoc(doc(db,'users', user.uid), { name, mobile, purok, guardian, guardianPhone, updatedAt: serverTimestamp() });
-  alert('Profile saved');
-  // refresh panels
-  const fresh = await getDoc(doc(db,'users', user.uid));
-  const data = fresh.data();
-  welcome.innerText = `Hello, ${data.name || user.email} — ${data.level === 'admin' ? 'Admin' : 'Student'}`;
-  if(data.level === 'admin') reloadAll();
-  else loadStudentGrades(user.uid);
-  closeProfile();
-};
-
-/* -------- Utility & reload convenience -------- */
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-
-async function reloadAll(){
-  await loadUsersTable();
-  await loadAllGradesTable();
-}
-
-/* When admin click refresh or initial load */
-window.reloadAll = reloadAll;
-
-/* Make sure main visible (auth state will toggle appropriately) */
-document.getElementById('main').style.display = 'block';
-document.getElementById('controls').classList.add('hidden');
-
-/* End of module */
-</script>
-</body>
-  </html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DANHS Website</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+<meta charset="UTF-8">
+<title>DANHS School Grades</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f9f9f9;
+  }
+  header {
+    background: #004080;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+  }
+  #menuBtn {
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 15px;
+  }
+  h1 { margin: 0; font-size: 20px; }
+
+  /* Side menu */
+  #sideMenu {
+    position: fixed;
+    top: 0; left: -250px;
+    width: 250px; height: 100%;
+    background: #333; color: white;
+    padding-top: 60px;
+    transition: 0.3s;
+    z-index: 1000;
+  }
+  #sideMenu a {
+    display: block;
+    padding: 12px;
+    color: white;
+    text-decoration: none;
+  }
+  #sideMenu a:hover { background: #575757; }
+  .panel {
+    display: none;
+    padding: 20px;
+    background: white;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  .close-btn {
+    float: right;
+    cursor: pointer;
+    color: red;
+  }
+  .btn-primary {
+    background: #004080;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  .btn-primary:hover { background: #0066cc; }
+  table {
+    width: 100%; border-collapse: collapse; margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+  th { background: #eee; }
+</style>
 </head>
 <body>
-  <!-- Signup Form -->
-  <div id="signup-form">
-    <h2>Sign Up</h2>
-    <input type="text" id="signup-name" placeholder="Full Name" required><br>
-    <input type="email" id="signup-email" placeholder="Email" required><br>
-    <input type="password" id="signup-password" placeholder="Password" required><br>
-    <input type="text" id="signup-number" placeholder="Phone Number" required><br>
-    <input type="text" id="signup-purok" placeholder="Purok" required><br>
-    <input type="text" id="signup-guardian" placeholder="Parent/Guardian" required><br>
-    <input type="text" id="signup-guardian-number" placeholder="Parent/Guardian Phone" required><br>
-    <button onclick="signup()">Sign Up</button>
-    <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+
+<header>
+  <span id="menuBtn">☰</span>
+  <h1>DANHS School Grades</h1>
+</header>
+
+<!-- Side Menu -->
+<div id="sideMenu">
+  <a href="#" onclick="openPanel('gradesPanel')">📊 Grades</a>
+  <a href="#" onclick="openPanel('usersPanel')">👥 All Users</a>
+  <a href="#" onclick="openPanel('addAdminPanel')">➕ Add Admin</a>
+  <a href="#" onclick="openPanel('deleteMemberPanel')">🗑️ Delete Member</a>
+  <a href="#" onclick="openPanel('infoPanel')">⚙️ My Info</a>
+  <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<!-- Signup Form -->
+<div id="signupDiv" class="panel" style="display:block;">
+  <h2>Signup</h2>
+  <input type="text" id="signupName" placeholder="Full Name"><br>
+  <input type="email" id="signupEmail" placeholder="Email"><br>
+  <input type="password" id="signupPassword" placeholder="Password"><br>
+  <input type="text" id="signupNumber" placeholder="Phone Number"><br>
+  <input type="text" id="signupPurok" placeholder="Purok"><br>
+  <input type="text" id="signupGuardian" placeholder="Parent/Guardian"><br>
+  <input type="text" id="signupGuardianPhone" placeholder="Guardian Phone"><br>
+  <button class="btn-primary" onclick="signup()">Sign Up</button>
+  <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+</div>
+
+<!-- Login Form -->
+<div id="loginDiv" class="panel">
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email"><br>
+  <input type="password" id="loginPassword" placeholder="Password"><br>
+  <button class="btn-primary" onclick="login()">Login</button>
+  <p>Don’t have an account? <a href="#" onclick="showSignup()">Sign Up</a></p>
   </div>
-
-  <!-- Login Form -->
-  <div id="login-form" style="display:none;">
-    <h2>Login</h2>
-    <input type="email" id="login-email" placeholder="Email" required><br>
-    <input type="password" id="login-password" placeholder="Password" required><br>
-    <button onclick="login()">Login</button>
-    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up here</a></p>
+  <!-- Grades Panel -->
+<div id="gradesPanel" class="panel">
+  <span class="close-btn" onclick="closePanel('gradesPanel')">❌</span>
+  <h3>Grades</h3>
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Level</th>
+        <th>Section</th>
+        <th>Subject</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div id="addGradeSection" style="margin-top:15px;">
+    <input type="text" id="gradeStudent" placeholder="Student Name"><br>
+    <input type="text" id="gradeLevel" placeholder="Level"><br>
+    <input type="text" id="gradeSection" placeholder="Section"><br>
+    <input type="text" id="gradeSubject" placeholder="Subject"><br>
+    <input type="text" id="gradeValue" placeholder="Grade"><br>
+    <button class="btn-primary" onclick="addGrade()">Add Grade</button>
   </div>
+</div>
 
-  <!-- Student Panel -->
-  <div id="student-panel" style="display:none;">
-    <h2>Student Panel</h2>
-    <p><b>Your Info</b></p>
-    <div id="student-info"></div>
-    <h3>Your Grades</h3>
-    <ul id="student-grades"></ul>
-    <button onclick="logout()">Logout</button>
-  </div>
+<!-- All Users Panel -->
+<div id="usersPanel" class="panel">
+  <span class="close-btn" onclick="closePanel('usersPanel')">❌</span>
+  <h3>All Users</h3>
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Purok</th>
+        <th>Guardian</th>
+        <th>Guardian Phone</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-  <!-- Admin Panel -->
-  <div id="admin-panel" style="display:none;">
-    <h2>Admin Panel</h2>
-    <h3>All Students</h3>
-    <ul id="all-students"></ul>
-    <h3>Add Grade</h3>
-    <input type="text" id="grade-student-id" placeholder="Student UID"><br>
-    <input type="text" id="grade-subject" placeholder="Subject"><br>
-    <input type="text" id="grade-score" placeholder="Score"><br>
-    <button onclick="addGrade()">Add Grade</button>
-    <h3>Delete Grade</h3>
-    <input type="text" id="delete-student-id" placeholder="Student UID"><br>
-    <input type="text" id="delete-subject" placeholder="Subject"><br>
-    <button onclick="deleteGrade()">Delete Grade</button>
-    <button onclick="logout()">Logout</button>
-  </div>
+<!-- Add Admin Panel -->
+<div id="addAdminPanel" class="panel">
+  <span class="close-btn" onclick="closePanel('addAdminPanel')">❌</span>
+  <h3>Add Admin</h3>
+  <input type="email" id="newAdminEmail" placeholder="Admin Email"><br>
+  <input type="password" id="newAdminPassword" placeholder="Password"><br>
+  <button class="btn-primary" onclick="addAdmin()">Create Admin</button>
+</div>
 
-  <script type="module">
-    // ✅ Your Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
-      authDomain: "test-9c727.firebaseapp.com",
-      projectId: "test-9c727",
-      storageBucket: "test-9c727.firebasestorage.app",
-      messagingSenderId: "198578631587",
-      appId: "1:198578631587:web:c0831122f964d46149e016"
-    };
+<!-- Delete Member Panel -->
+<div id="deleteMemberPanel" class="panel">
+  <span class="close-btn" onclick="closePanel('deleteMemberPanel')">❌</span>
+  <h3>Delete Member</h3>
+  <table id="deleteUsersTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+<!-- My Info Panel -->
+<div id="infoPanel" class="panel">
+  <span class="close-btn" onclick="closePanel('infoPanel')">❌</span>
+  <h3>My Information</h3>
+  <input type="text" id="infoName" placeholder="Full Name"><br>
+  <input type="text" id="infoNumber" placeholder="Phone Number"><br>
+  <input type="text" id="infoPurok" placeholder="Purok"><br>
+  <input type="text" id="infoGuardian" placeholder="Parent/Guardian"><br>
+  <input type="text" id="infoGuardianPhone" placeholder="Guardian Phone"><br>
+  <button class="btn-primary" onclick="updateInfo()">Update Info</button>
+</div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, setDoc, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // ✅ Toggle Forms
-    window.showLogin = function () {
-      document.getElementById("signup-form").style.display = "none";
-      document.getElementById("login-form").style.display = "block";
-    };
+// ✅ Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+  authDomain: "test-9c727.firebaseapp.com",
+  projectId: "test-9c727",
+  storageBucket: "test-9c727.firebasestorage.app",
+  messagingSenderId: "198578631587",
+  appId: "1:198578631587:web:c0831122f964d46149e016"
+};
 
-    window.showSignup = function () {
-      document.getElementById("signup-form").style.display = "block";
-      document.getElementById("login-form").style.display = "none";
-    };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    // ✅ Signup
-    window.signup = function () {
-      const name = document.getElementById("signup-name").value;
-      const email = document.getElementById("signup-email").value;
-      const password = document.getElementById("signup-password").value;
-      const number = document.getElementById("signup-number").value;
-      const purok = document.getElementById("signup-purok").value;
-      const guardian = document.getElementById("signup-guardian").value;
-      const guardianNumber = document.getElementById("signup-guardian-number").value;
+// ✅ Toggle panels
+function openPanel(id) {
+  document.querySelectorAll(".panel").forEach(p => p.style.display="none");
+  document.getElementById(id).style.display="block";
+}
+function closePanel(id) { document.getElementById(id).style.display="none"; }
+document.getElementById("menuBtn").onclick = () => {
+  let menu = document.getElementById("sideMenu");
+  menu.style.left = menu.style.left === "0px" ? "-250px" : "0px";
+};
 
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          set(ref(db, "users/" + user.uid), {
-            name: name,
-            email: email,
-            number: number,
-            purok: purok,
-            guardian: guardian,
-            guardianNumber: guardianNumber,
-            role: "student"
-          });
-          alert("Sign up successful!");
-          showLogin();
-        })
-        .catch((error) => {
-          alert(error.message);
-        });
-    };
+// ✅ Show login/signup
+window.showLogin = ()=>{ document.getElementById("signupDiv").style.display="none"; document.getElementById("loginDiv").style.display="block"; }
+window.showSignup = ()=>{ document.getElementById("loginDiv").style.display="none"; document.getElementById("signupDiv").style.display="block"; }
 
-    // ✅ Login
-    window.login = function () {
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
+// ✅ Signup
+window.signup = async ()=>{
+  const name = document.getElementById("signupName").value;
+  const email = document.getElementById("signupEmail").value;
+  const pass = document.getElementById("signupPassword").value;
+  const number = document.getElementById("signupNumber").value;
+  const purok = document.getElementById("signupPurok").value;
+  const guardian = document.getElementById("signupGuardian").value;
+  const guardianPhone = document.getElementById("signupGuardianPhone").value;
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          const dbRef = ref(db);
-          get(child(dbRef, "users/" + user.uid)).then((snapshot) => {
-            if (snapshot.exists()) {
-              const userData = snapshot.val();
-              if (userData.role === "admin") {
-                showAdminPanel();
-              } else {
-                showStudentPanel(user.uid);
-              }
-            }
-          });
-        })
-        .catch((error) => {
-          alert(error.message);
-        });
-    };
+  try {
+    await createUserWithEmailAndPassword(auth,email,pass);
+    await setDoc(doc(db,"users",email),{
+      name,email,number,purok,guardian,guardianPhone,level:"student",section:""
+    });
+    alert("Signup success! Now login.");
+    showLogin();
+  } catch(err){ alert(err.message); }
+}
 
-    // ✅ Logout
-    window.logout = function () {
-      signOut(auth).then(() => {
-        alert("Logged out!");
-        location.reload();
-      });
-    };
+// ✅ Login
+window.login = async ()=>{
+  const email=document.getElementById("loginEmail").value;
+  const pass=document.getElementById("loginPassword").value;
+  try { await signInWithEmailAndPassword(auth,email,pass); }
+  catch(err){ alert(err.message); }
+}
 
-    // ✅ Student Panel
-    function showStudentPanel(uid) {
-      document.getElementById("signup-form").style.display = "none";
-      document.getElementById("login-form").style.display = "none";
-      document.getElementById("admin-panel").style.display = "none";
-      document.getElementById("student-panel").style.display = "block";
+// ✅ Logout
+window.logout = async ()=>{ await signOut(auth); location.reload(); }
 
-      const dbRef = ref(db);
-      get(child(dbRef, "users/" + uid)).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          document.getElementById("student-info").innerHTML = `
-            Name: ${data.name}<br>
-            Email: ${data.email}<br>
-            Phone: ${data.number}<br>
-            Purok: ${data.purok}<br>
-            Guardian: ${data.guardian}<br>
-            Guardian Phone: ${data.guardianNumber}
-          `;
-        }
-      });
+// ✅ Auth state
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    document.getElementById("signupDiv").style.display="none";
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("sideMenu").style.left="0px";
 
-      get(child(dbRef, "grades/" + uid)).then((snapshot) => {
-        if (snapshot.exists()) {
-          const grades = snapshot.val();
-          let gradeList = "";
-          for (const subject in grades) {
-            gradeList += `<li>${subject}: ${grades[subject]}</li>`;
-          }
-          document.getElementById("student-grades").innerHTML = gradeList;
-        }
-      });
-    }
+    // get user data
+    const snapshot = await getDocs(query(collection(db,"users"), where("email","==",user.email)));
+    snapshot.forEach(d=>{
+      let data=d.data();
+      if(data.level==="admin"){
+        loadAllGrades();
+        loadAllUsers();
+        loadDeleteUsers();
+      }else{
+        loadMyGrades(user.email);
+        loadMyInfo(user.email);
+      }
+    });
+  }
+});
 
-    // ✅ Admin Panel
-    function showAdminPanel() {
-      document.getElementById("signup-form").style.display = "none";
-      document.getElementById("login-form").style.display = "none";
-      document.getElementById("student-panel").style.display = "none";
-      document.getElementById("admin-panel").style.display = "block";
+// ✅ Add Grade
+window.addGrade = async ()=>{
+  const student=document.getElementById("gradeStudent").value;
+  const level=document.getElementById("gradeLevel").value;
+  const section=document.getElementById("gradeSection").value;
+  const subject=document.getElementById("gradeSubject").value;
+  const grade=document.getElementById("gradeValue").value;
+  await addDoc(collection(db,"grades"),{student,level,section,subject,grade});
+  alert("Grade added!");
+  loadAllGrades();
+}
 
-      const dbRef = ref(db);
-      get(child(dbRef, "users")).then((snapshot) => {
-        if (snapshot.exists()) {
-          const users = snapshot.val();
-          let list = "";
-          for (const uid in users) {
-            list += `<li>${users[uid].name} (${users[uid].email}) - UID: ${uid}</li>`;
-          }
-          document.getElementById("all-students").innerHTML = list;
-        }
-      });
-    }
+// ✅ Load All Grades
+async function loadAllGrades(){
+  const tbody=document.querySelector("#gradesTable tbody");
+  tbody.innerHTML="";
+  const snap=await getDocs(collection(db,"grades"));
+  snap.forEach(doc=>{
+    let g=doc.data();
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${g.student}</td><td>${g.level}</td><td>${g.section}</td><td>${g.subject}</td><td>${g.grade}</td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-    // ✅ Add Grade
-    window.addGrade = function () {
-      const uid = document.getElementById("grade-student-id").value;
-      const subject = document.getElementById("grade-subject").value;
-      const score = document.getElementById("grade-score").value;
+// ✅ Load My Grades
+async function loadMyGrades(email){
+  const tbody=document.querySelector("#gradesTable tbody");
+  tbody.innerHTML="";
+  const q=query(collection(db,"grades"),where("student","==",email));
+  const snap=await getDocs(q);
+  snap.forEach(doc=>{
+    let g=doc.data();
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${g.student}</td><td>${g.level}</td><td>${g.section}</td><td>${g.subject}</td><td>${g.grade}</td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-      update(ref(db, "grades/" + uid), {
-        [subject]: score
-      }).then(() => {
-        alert("Grade added!");
-      });
-    };
+// ✅ Load Users
+async function loadAllUsers(){
+  const tbody=document.querySelector("#usersTable tbody");
+  tbody.innerHTML="";
+  const snap=await getDocs(collection(db,"users"));
+  snap.forEach(doc=>{
+    let u=doc.data();
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${u.name||""}</td><td>${u.email}</td><td>${u.number||""}</td><td>${u.purok||""}</td><td>${u.guardian||""}</td><td>${u.guardianPhone||""}</td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-    // ✅ Delete Grade
-    window.deleteGrade = function () {
-      const uid = document.getElementById("delete-student-id").value;
-      const subject = document.getElementById("delete-subject").value;
+// ✅ Delete Member
+async function loadDeleteUsers(){
+  const tbody=document.querySelector("#deleteUsersTable tbody");
+  tbody.innerHTML="";
+  const snap=await getDocs(collection(db,"users"));
+  snap.forEach(docu=>{
+    let u=docu.data();
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${u.name||""}</td><td>${u.email}</td>
+      <td><button onclick="deleteMember('${docu.id}')">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+window.deleteMember=async(id)=>{
+  if(confirm("Are you sure to delete?")){
+    await deleteDoc(doc(db,"users",id));
+    alert("Deleted!");
+    loadDeleteUsers();
+  }
+}
 
-      remove(ref(db, "grades/" + uid + "/" + subject)).then(() => {
-        alert("Grade deleted!");
-      });
-    };
-  </script>
+// ✅ Add Admin
+window.addAdmin = async ()=>{
+  const email=document.getElementById("newAdminEmail").value;
+  const pass=document.getElementById("newAdminPassword").value;
+  try{
+    await createUserWithEmailAndPassword(auth,email,pass);
+    await setDoc(doc(db,"users",email),{email,level:"admin"});
+    alert("Admin added!");
+    loadAllUsers();
+  }catch(err){ alert(err.message); }
+}
+
+// ✅ My Info
+async function loadMyInfo(email){
+  const q=query(collection(db,"users"),where("email","==",email));
+  const snap=await getDocs(q);
+  snap.forEach(d=>{
+    let u=d.data();
+    document.getElementById("infoName").value=u.name||"";
+    document.getElementById("infoNumber").value=u.number||"";
+    document.getElementById("infoPurok").value=u.purok||"";
+    document.getElementById("infoGuardian").value=u.guardian||"";
+    document.getElementById("infoGuardianPhone").value=u.guardianPhone||"";
+  });
+}
+window.updateInfo = async ()=>{
+  const user=auth.currentUser;
+  if(!user) return;
+  await setDoc(doc(db,"users",user.email),{
+    name:document.getElementById("infoName").value,
+    email:user.email,
+    number:document.getElementById("infoNumber").value,
+    purok:document.getElementById("infoPurok").value,
+    guardian:document.getElementById("infoGuardian").value,
+    guardianPhone:document.getElementById("infoGuardianPhone").value,
+    level:"student"
+  });
+  alert("Info updated!");
+}
+</script>
 </body>
-</html>
+  </html>
