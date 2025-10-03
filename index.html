@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Grades Management System</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 30px;
+            height: 25px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+        }
+
+        .hamburger-menu.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hamburger-menu span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: white;
+            transition: 0.3s;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: -250px;
+            top: 0;
+            width: 250px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            transition: left 0.3s ease;
+            z-index: 999;
+            padding-top: 60px;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar ul li {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            display: block;
+        }
+
+        .sidebar ul li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-box h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .auth-form h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .auth-form input,
+        .auth-form select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .password-input {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input input {
+            flex: 1;
+            margin-bottom: 15px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .password-strength {
+            height: 5px;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .password-strength.weak {
+            background: #ff4444;
+            width: 33%;
+        }
+
+        .password-strength.medium {
+            background: #ffaa00;
+            width: 66%;
+        }
+
+        .password-strength.strong {
+            background: #00C851;
+            width: 100%;
+        }
+
+        .auth-form button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .auth-form button:hover {
+            background: #5568d3;
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .toggle-auth a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .main-container {
+            padding: 80px 20px 20px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .table-controls {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .zoom-btn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .zoom-btn:hover {
+            background: #5568d3;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .table-container.zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95vw;
+            height: 90vh;
+            max-height: none;
+            z-index: 1001;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            background: #667eea;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-passed {
+            color: #00C851;
+            font-weight: bold;
+        }
+
+        .status-failed {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .admin-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .admin-section:last-child {
+            border-bottom: none;
+        }
+
+        .admin-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .admin-section input,
+        .admin-section select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .admin-section button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .admin-section button:hover {
+            background: #5568d3;
+        }
+
+        .delete-btn {
+            padding: 5px 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #cc0000;
+        }
+
+        .profile-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .profile-form button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .profile-form button:hover {
+            background: #5568d3;
+        }
+
+        @media (max-width: 768px) {
+            .auth-box {
+                padding: 20px;
+            }
+
+            .main-container {
+                padding: 60px 10px 10px 10px;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+
+            table th,
+            table td {
+                padding: 8px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-box h1 {
+                font-size: 24px;
+            }
+
+            .auth-form h2 {
+                font-size: 20px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+        }
+    </style>
+  </head>
+
+  <body>
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <nav class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#" onclick="showPanel('grades')">Grades</a></li>
+            <li id="adminPanelLink" style="display: none;"><a href="#" onclick="showPanel('admin')">Admin Panel</a></li>
+            <li><a href="#" onclick="showPanel('profile')">Profile</a></li>
+            <li><a href="#" onclick="logout()">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <h1>Student Grades System</h1>
+            
+            <div class="auth-form" id="loginForm">
+                <h2>Login</h2>
+                <input type="email" id="loginEmail" placeholder="Email" required>
+                <div class="password-input">
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">👁️</button>
+                </div>
+                <button onclick="login()">Login</button>
+                <p class="toggle-auth">Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign Up</a></p>
+            </div>
+
+            <div class="auth-form" id="signupForm" style="display: none;">
+                <h2>Sign Up</h2>
+                <input type="text" id="signupName" placeholder="Full Name" required>
+                <input type="email" id="signupEmail" placeholder="Email" required>
+                <div class="password-input">
+                    <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('signupPassword')">👁️</button>
+                </div>
+                <div class="password-strength" id="signupPasswordStrength"></div>
+                <select id="signupLevel" required>
+                    <option value="">Select Level</option>
+                    <option value="7">Grade 7</option>
+                    <option value="8">Grade 8</option>
+                    <option value="9">Grade 9</option>
+                    <option value="10">Grade 10</option>
+                    <option value="11">Grade 11</option>
+                    <option value="12">Grade 12</option>
+                </select>
+                <select id="signupSection" required>
+                    <option value="">Select Section</option>
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
+                    <option value="D">Section D</option>
+                </select>
+                <button onclick="signup()">Sign Up</button>
+                <p class="toggle-auth">Already have an account? <a href="#" onclick="toggleAuthForm()">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer" style="display: none;">
+        <div class="panel" id="gradesPanel">
+            <h2>My Grades</h2>
+            <div class="table-controls">
+                <button class="zoom-btn" onclick="toggleZoom('gradesTable')">🔍 Zoom</button>
+            </div>
+            <div class="table-container" id="gradesTableContainer">
+                <table id="gradesTable">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Level</th>
+                            <th>Section</th>
+                            <th>Subject</th>
+                            <th>Grade</th>
+                            <th>Status</th>
+                            <th id="actionsHeader" style="display: none;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gradesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel" id="adminPanel" style="display: none;">
+            <h2>Admin Panel</h2>
+            
+            <div class="admin-section">
+                <h3>All Users</h3>
+                <input type="text" id="userSearch" placeholder="Search users..." onkeyup="searchUsers()">
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Level</th>
+                                <th>Section</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3 id="gradeFormTitle">Add/Edit Grade</h3>
+                <select id="gradeStudentSelect">
+                    <option value="">Select Student</option>
+                </select>
+                <input type="text" id="gradeSubject" placeholder="Subject">
+                <input type="number" id="gradeValue" placeholder="Grade (0-100)" min="0" max="100">
+                <button id="gradeSubmitBtn" onclick="saveGrade()">Add Grade</button>
+                <button id="gradeCancelBtn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background: #999;">Cancel</button>
+            </div>
+
+            <div class="admin-section">
+                <h3>Create Admin Account</h3>
+                <input type="email" id="adminEmail" placeholder="Admin Email">
+                <div class="password-input">
+                    <input type="password" id="adminPassword" placeholder="Admin Password (min 6 characters)">
+                    <button type="button" class="toggle-password" onclick="togglePassword('adminPassword')">👁️</button>
+                </div>
+                <div class="password-strength" id="adminPasswordStrength"></div>
+                <button onclick="createAdmin()">Create Admin</button>
+            </div>
+        </div>
+
+        <div class="panel" id="profilePanel" style="display: none;">
+            <h2>Profile</h2>
+            <div class="profile-form">
+                <input type="text" id="profileName" placeholder="Full Name">
+                <input type="text" id="profileMobile" placeholder="Mobile Number">
+                <input type="text" id="profilePurok" placeholder="Purok">
+                <input type="text" id="profileGuardianName" placeholder="Parents/Guardian Name">
+                <input type="text" id="profileGuardianPhone" placeholder="Parents/Guardian Phone Number">
+                <button onclick="updateProfile()">Update Profile</button>                   
+            </div>
+        </div>
+              </div>
+
+        <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            getDoc,
+            setDoc,
+            deleteDoc,
+            doc, 
+            query, 
+            where,
+            updateDoc 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+            authDomain: "test-9c727.firebaseapp.com",
+            projectId: "test-9c727",
+            storageBucket: "test-9c727.firebasestorage.app",
+            messagingSenderId: "198578631587",
+            appId: "1:198578631587:web:c0831122f964d46149e016"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+        const secondaryAuth = getAuth(secondaryApp);
+
+        let currentUser = null;
+        let currentUserData = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    currentUserData = userDoc.data();
+                    showMainApp();
+                }
+            } else {
+                currentUser = null;
+                currentUserData = null;
+                showAuthScreen();
+            }
+        });
+
+        function showAuthScreen() {
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('hamburgerMenu').classList.remove('active');
+        }
+
+        function showMainApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            document.getElementById('hamburgerMenu').classList.add('active');
+            
+            if (currentUserData.role === 'admin') {
+                document.getElementById('adminPanelLink').style.display = 'block';
+                document.getElementById('actionsHeader').style.display = 'table-cell';
+                loadAllUsers();
+                loadAllGrades();
+                loadStudentsForGradeSelect();
+            } else {
+                document.getElementById('adminPanelLink').style.display = 'none';
+                document.getElementById('actionsHeader').style.display = 'none';
+                loadStudentGrades();
+            }
+            
+            loadProfile();
+            showPanel('grades');
+        }
+
+        window.toggleAuthForm = function() {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+            }
+        }
+
+        window.togglePassword = function(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        document.getElementById('signupPassword')?.addEventListener('input', function() {
+            checkPasswordStrength(this.value, 'signupPasswordStrength');
+        });
+
+        document.getElementById('adminPassword')?.addEventListener('input', function() {
+            checkPasswordStrength(this.value, 'adminPasswordStrength');
+        });
+
+        function checkPasswordStrength(password, elementId) {
+            const strengthBar = document.getElementById(elementId);
+            const length = password.length;
+            
+            if (length === 0) {
+                strengthBar.className = 'password-strength';
+            } else if (length < 6) {
+                strengthBar.className = 'password-strength weak';
+            } else if (length < 10) {
+                strengthBar.className = 'password-strength medium';
+            } else {
+                strengthBar.className = 'password-strength strong';
+            }
+        }
+
+        window.signup = async function() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const level = document.getElementById('signupLevel').value;
+            const section = document.getElementById('signupSection').value;
+            
+            if (!name || !email || !password || !level || !section) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await setDoc(doc(db, 'users', userCredential.user.uid), {
+                    name: name,
+                    email: email,
+                    level: level,
+                    section: section,
+                    role: 'student',
+                    createdAt: new Date().toISOString()
+                });
+                
+                alert('Account created successfully!');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        window.login = async function() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+                document.getElementById('sidebar').classList.remove('active');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        document.getElementById('hamburgerMenu').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        window.showPanel = function(panelName) {
+            document.getElementById('gradesPanel').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('profilePanel').style.display = 'none';
+            
+            if (panelName === 'grades') {
+                document.getElementById('gradesPanel').style.display = 'block';
+            } else if (panelName === 'admin') {
+                document.getElementById('adminPanel').style.display = 'block';
+            } else if (panelName === 'profile') {
+                document.getElementById('profilePanel').style.display = 'block';
+            }
+            
+            document.getElementById('sidebar').classList.remove('active');
+        }
+
+        async function loadStudentGrades() {
+            const tbody = document.getElementById('gradesTableBody');
+            tbody.innerHTML = '';
+            
+            try {
+                const q = query(collection(db, 'grades'), where('userId', '==', currentUser.uid));
+                const querySnapshot = await getDocs(q);
+                
+                querySnapshot.forEach((doc) => {
+                    const grade = doc.data();
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${currentUserData.name}</td>
+                        <td>${currentUserData.level}</td>
+                        <td>${currentUserData.section}</td>
+                        <td>${grade.subject}</td>
+                        <td>${grade.grade}</td>
+                        <td class="${grade.grade >= 75 ? 'status-passed' : 'status-failed'}">
+                            ${grade.grade >= 75 ? 'Passed' : 'Failed'}
+                        </td>
+                    `;
+                });
+                
+                if (querySnapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No grades available</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading grades:', error);
+            }
+        }
+
+
+                  let editingGradeId = null;
+
+        async function loadAllGrades() {
+            const tbody = document.getElementById('gradesTableBody');
+            tbody.innerHTML = '';
+            
+            try {
+                const gradesSnapshot = await getDocs(collection(db, 'grades'));
+                const usersSnapshot = await getDocs(collection(db, 'users'));
+                
+                const usersMap = {};
+                usersSnapshot.forEach((doc) => {
+                    usersMap[doc.id] = doc.data();
+                });
+                
+                gradesSnapshot.forEach((docSnap) => {
+                    const grade = docSnap.data();
+                    const user = usersMap[grade.userId];
+                    
+                    if (user) {
+                        const row = tbody.insertRow();
+                        const isAdmin = currentUserData.role === 'admin';
+                        
+                        row.insertCell(0).textContent = user.name;
+                        row.insertCell(1).textContent = user.level;
+                        row.insertCell(2).textContent = user.section;
+                        row.insertCell(3).textContent = grade.subject;
+                        row.insertCell(4).textContent = grade.grade;
+                        
+                        const statusCell = row.insertCell(5);
+                        statusCell.textContent = grade.grade >= 75 ? 'Passed' : 'Failed';
+                        statusCell.className = grade.grade >= 75 ? 'status-passed' : 'status-failed';
+                        
+                        if (isAdmin) {
+                            const actionsCell = row.insertCell(6);
+                            
+                            const editBtn = document.createElement('button');
+                            editBtn.className = 'delete-btn';
+                            editBtn.textContent = 'Edit';
+                            editBtn.style.background = '#667eea';
+                            editBtn.style.marginRight = '5px';
+                            editBtn.addEventListener('click', () => {
+                                editGrade(docSnap.id, grade.userId, grade.subject, grade.grade);
+                            });
+                            
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'delete-btn';
+                            deleteBtn.textContent = 'Delete';
+                            deleteBtn.addEventListener('click', () => {
+                                deleteGrade(docSnap.id);
+                            });
+                            
+                            actionsCell.appendChild(editBtn);
+                            actionsCell.appendChild(deleteBtn);
+                        }
+                    }
+                });
+                
+                if (gradesSnapshot.empty) {
+                    const colspan = currentUserData.role === 'admin' ? '7' : '6';
+                    tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center;">No grades available</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error loading all grades:', error);
+            }
+        }
+
+        async function loadAllUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                
+                querySnapshot.forEach((doc) => {
+                    const user = doc.data();
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${user.name || 'N/A'}</td>
+                        <td>${user.email}</td>
+                        <td>${user.level || 'N/A'}</td>
+                        <td>${user.section || 'N/A'}</td>
+                        <td>${user.role}</td>
+                        <td>
+                            ${user.role !== 'admin' || doc.id !== currentUser.uid ? 
+                                `<button class="delete-btn" onclick="deleteUser('${doc.id}')">Delete</button>` : 
+                                'Current User'}
+                        </td>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function loadStudentsForGradeSelect() {
+            const select = document.getElementById('gradeStudentSelect');
+            select.innerHTML = '<option value="">Select Student</option>';
+            
+            try {
+                const q = query(collection(db, 'users'), where('role', '==', 'student'));
+                const querySnapshot = await getDocs(q);
+                
+                querySnapshot.forEach((doc) => {
+                    const user = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${user.name} (${user.level}-${user.section})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading students:', error);
+            }
+        }
+
+        window.searchUsers = function() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const rows = document.getElementById('usersTableBody').getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            }
+        }
+
+        window.editGrade = function(gradeId, userId, subject, grade) {
+            editingGradeId = gradeId;
+            document.getElementById('gradeStudentSelect').value = userId;
+            document.getElementById('gradeSubject').value = subject;
+            document.getElementById('gradeValue').value = grade;
+            document.getElementById('gradeFormTitle').textContent = 'Edit Grade';
+            document.getElementById('gradeSubmitBtn').textContent = 'Update Grade';
+            document.getElementById('gradeCancelBtn').style.display = 'inline-block';
+            showPanel('admin');
+        }
+
+        window.cancelEdit = function() {
+            editingGradeId = null;
+            document.getElementById('gradeStudentSelect').value = '';
+            document.getElementById('gradeSubject').value = '';
+            document.getElementById('gradeValue').value = '';
+            document.getElementById('gradeFormTitle').textContent = 'Add/Edit Grade';
+            document.getElementById('gradeSubmitBtn').textContent = 'Add Grade';
+            document.getElementById('gradeCancelBtn').style.display = 'none';
+        }
+
+        window.saveGrade = async function() {
+            const studentId = document.getElementById('gradeStudentSelect').value;
+            const subject = document.getElementById('gradeSubject').value;
+            const grade = parseInt(document.getElementById('gradeValue').value);
+            
+            if (!studentId || !subject || isNaN(grade)) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (grade < 0 || grade > 100) {
+                alert('Grade must be between 0 and 100');
+                return;
+            }
+            
+            try {
+                if (editingGradeId) {
+                    await updateDoc(doc(db, 'grades', editingGradeId), {
+                        userId: studentId,
+                        subject: subject,
+                        grade: grade,
+                        updatedAt: new Date().toISOString()
+                    });
+                    alert('Grade updated successfully!');
+                    cancelEdit();
+                } else {
+                    await addDoc(collection(db, 'grades'), {
+                        userId: studentId,
+                        subject: subject,
+                        grade: grade,
+                        createdAt: new Date().toISOString()
+                    });
+                    alert('Grade added successfully!');
+                    document.getElementById('gradeSubject').value = '';
+                    document.getElementById('gradeValue').value = '';
+                }
+                
+                loadAllGrades();
+            } catch (error) {
+                alert('Error saving grade: ' + error.message);
+            }
+        }
+
+        window.deleteGrade = async function(gradeId) {
+            if (!confirm('Are you sure you want to delete this grade?')) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, 'grades', gradeId));
+                alert('Grade deleted successfully!');
+                loadAllGrades();
+            } catch (error) {
+                alert('Error deleting grade: ' + error.message);
+            }
+        }
+
+        window.createAdmin = async function() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            
+            try {
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                await setDoc(doc(db, 'users', userCredential.user.uid), {
+                    email: email,
+                    name: 'Admin',
+                    role: 'admin',
+                    createdAt: new Date().toISOString()
+                });
+                
+                await signOut(secondaryAuth);
+                
+                alert('Admin account created successfully! The new admin can now log in with the provided credentials.');
+                document.getElementById('adminEmail').value = '';
+                document.getElementById('adminPassword').value = '';
+                
+                loadAllUsers();
+            } catch (error) {
+                alert('Error creating admin: ' + error.message);
+            }
+        }
+
+        window.deleteUser = async function(userId) {
+            if (!confirm('Are you sure you want to delete this user? This will also delete all their grades.')) {
+                return;
+            }
+            
+            try {
+                const gradesQuery = query(collection(db, 'grades'), where('userId', '==', userId));
+                const gradesSnapshot = await getDocs(gradesQuery);
+                
+                const deletePromises = [];
+                gradesSnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                
+                await Promise.all(deletePromises);
+                await deleteDoc(doc(db, 'users', userId));
+                
+                alert('User deleted successfully!');
+                loadAllUsers();
+                loadAllGrades();
+            } catch (error) {
+                alert('Error deleting user: ' + error.message);
+            }
+        }
+
+        async function loadProfile() {
+            const profileDoc = await getDoc(doc(db, 'profiles', currentUser.uid));
+            
+            if (profileDoc.exists()) {
+                const profile = profileDoc.data();
+                document.getElementById('profileName').value = profile.name || '';
+                document.getElementById('profileMobile').value = profile.mobile || '';
+                document.getElementById('profilePurok').value = profile.purok || '';
+                document.getElementById('profileGuardianName').value = profile.guardianName || '';
+                document.getElementById('profileGuardianPhone').value = profile.guardianPhone || '';
+            } else {
+                document.getElementById('profileName').value = currentUserData.name || '';
+                document.getElementById('profileMobile').value = '';
+                document.getElementById('profilePurok').value = '';
+                document.getElementById('profileGuardianName').value = '';
+                document.getElementById('profileGuardianPhone').value = '';
+            }
+        }
+
+        window.updateProfile = async function() {
+            const profileData = {
+                name: document.getElementById('profileName').value,
+                mobile: document.getElementById('profileMobile').value,
+                purok: document.getElementById('profilePurok').value,
+                guardianName: document.getElementById('profileGuardianName').value,
+                guardianPhone: document.getElementById('profileGuardianPhone').value
+            };
+            
+            try {
+                await setDoc(doc(db, 'profiles', currentUser.uid), profileData);
+                
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    name: profileData.name
+                });
+                
+                currentUserData.name = profileData.name;
+                
+                alert('Profile updated successfully!');
+                
+                if (currentUserData.role === 'student') {
+                    loadStudentGrades();
+                } else {
+                    loadAllGrades();
+                }
+            } catch (error) {
+                alert('Error updating profile: ' + error.message);
+            }
+        }
+
+        window.toggleZoom = function(tableId) {
+            const container = document.getElementById(tableId + 'Container');
+            container.classList.toggle('zoomed');
+            
+            if (container.classList.contains('zoomed')) {
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = '✕ Close';
+                closeBtn.className = 'zoom-btn';
+                closeBtn.style.position = 'absolute';
+                closeBtn.style.top = '10px';
+                closeBtn.style.right = '10px';
+                closeBtn.onclick = () => toggleZoom(tableId);
+                container.appendChild(closeBtn);
+            } else {
+                const closeBtn = container.querySelector('.zoom-btn:last-child');
+                if (closeBtn && closeBtn.textContent.includes('Close')) {
+                    closeBtn.remove();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+  
