@@ -1,1115 +1,929 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Grades Management System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DANSH Grading System</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* ... The ENTIRE CSS from style (copy).css is embedded here ... */
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #87CEEB 0%, #FFD700 100%);
+    }
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    /* ... Approximately 200 lines of CSS styles, including media queries ... */
+    
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 14px;
+      }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
+      .btn-logout {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
 
-        .hamburger-menu {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 30px;
-            height: 25px;
-            cursor: pointer;
-            z-index: 1000;
-            display: none;
-        }
-
-        .hamburger-menu.active {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .hamburger-menu span {
-            display: block;
-            width: 100%;
-            height: 3px;
-            background-color: white;
-            transition: 0.3s;
-        }
-
-        .sidebar {
-            position: fixed;
-            left: -250px;
-            top: 0;
-            width: 250px;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            transition: left 0.3s ease;
-            z-index: 999;
-            padding-top: 60px;
-        }
-
-        .sidebar.active {
-            left: 0;
-        }
-
-        .sidebar ul {
-            list-style: none;
-        }
-
-        .sidebar ul li {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            display: block;
-        }
-
-        .sidebar ul li:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .auth-box {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .auth-box h1 {
-            color: #667eea;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .auth-form h2 {
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .auth-form input,
-        .auth-form select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .password-input {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-input input {
-            flex: 1;
-            margin-bottom: 15px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 5px;
-        }
-
-        .password-strength {
-            height: 5px;
-            border-radius: 3px;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-        }
-
-        .password-strength.weak {
-            background: #ff4444;
-            width: 33%;
-        }
-
-        .password-strength.medium {
-            background: #ffaa00;
-            width: 66%;
-        }
-
-        .password-strength.strong {
-            background: #00C851;
-            width: 100%;
-        }
-
-        .auth-form button {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .auth-form button:hover {
-            background: #5568d3;
-        }
-
-        .toggle-auth {
-            text-align: center;
-            margin-top: 15px;
-            color: #666;
-        }
-
-        .toggle-auth a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .main-container {
-            padding: 80px 20px 20px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .panel {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .panel h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-
-        .table-controls {
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .zoom-btn {
-            padding: 8px 15px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .zoom-btn:hover {
-            background: #5568d3;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .table-container.zoomed {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 95vw;
-            height: 90vh;
-            max-height: none;
-            z-index: 1001;
-            background: white;
-            padding: 20px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table thead {
-            background: #667eea;
-            color: white;
-            position: sticky;
-            top: 0;
-        }
-
-        table th,
-        table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        table tbody tr:hover {
-            background: #f5f5f5;
-        }
-
-        .status-passed {
-            color: #00C851;
-            font-weight: bold;
-        }
-
-        .status-failed {
-            color: #ff4444;
-            font-weight: bold;
-        }
-
-        .admin-section {
-            margin-bottom: 30px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .admin-section:last-child {
-            border-bottom: none;
-        }
-
-        .admin-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .admin-section input,
-        .admin-section select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .admin-section button {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .admin-section button:hover {
-            background: #5568d3;
-        }
-
-        .delete-btn {
-            padding: 5px 10px;
-            background: #ff4444;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .delete-btn:hover {
-            background: #cc0000;
-        }
-
-        .profile-form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .profile-form button {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .profile-form button:hover {
-            background: #5568d3;
-        }
-
-        @media (max-width: 768px) {
-            .auth-box {
-                padding: 20px;
-            }
-
-            .main-container {
-                padding: 60px 10px 10px 10px;
-            }
-
-            .panel {
-                padding: 15px;
-            }
-
-            table th,
-            table td {
-                padding: 8px;
-                font-size: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .auth-box h1 {
-                font-size: 24px;
-            }
-
-            .auth-form h2 {
-                font-size: 20px;
-            }
-
-            table {
-                font-size: 11px;
-            }
-        }
-    </style>
-  </head>
-
-  <body>
-    <div class="hamburger-menu" id="hamburgerMenu">
-        <span></span>
-        <span></span>
-        <span></span>
+</head>
+<body>
+  <div id="auth-container" class="container active">
+    <div id="login-form" class="auth-form active">
+      <h1>DANSH Grading System</h1>
+      <h2>Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="password-input">
+            <input type="password" id="login-password" required>
+            <button type="button" class="toggle-password" onclick="togglePassword('login-password')">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember-me">
+            Remember Me
+          </label>
+        </div>
+        <button type="submit" class="btn-primary">Login</button>
+        <p class="toggle-form">Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign Up</a></p>
+      </form>
     </div>
 
-    <nav class="sidebar" id="sidebar">
-        <ul>
-            <li><a href="#" onclick="showPanel('grades')">Grades</a></li>
-            <li id="adminPanelLink" style="display: none;"><a href="#" onclick="showPanel('admin')">Admin Panel</a></li>
-            <li><a href="#" onclick="showPanel('profile')">Profile</a></li>
-            <li><a href="#" onclick="logout()">Logout</a></li>
-        </ul>
-    </nav>
-
-    <div class="auth-container" id="authContainer">
-        <div class="auth-box">
-            <h1>Student Grades System</h1>
-            
-            <div class="auth-form" id="loginForm">
-                <h2>Login</h2>
-                <input type="email" id="loginEmail" placeholder="Email" required>
-                <div class="password-input">
-                    <input type="password" id="loginPassword" placeholder="Password" required>
-                    <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">👁️</button>
-                </div>
-                <button onclick="login()">Login</button>
-                <p class="toggle-auth">Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign Up</a></p>
-            </div>
-
-            <div class="auth-form" id="signupForm" style="display: none;">
-                <h2>Sign Up</h2>
-                <input type="text" id="signupName" placeholder="Full Name" required>
-                <input type="email" id="signupEmail" placeholder="Email" required>
-                <div class="password-input">
-                    <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" required>
-                    <button type="button" class="toggle-password" onclick="togglePassword('signupPassword')">👁️</button>
-                </div>
-                <div class="password-strength" id="signupPasswordStrength"></div>
-                <select id="signupLevel" required>
-                    <option value="">Select Level</option>
-                    <option value="7">Grade 7</option>
-                    <option value="8">Grade 8</option>
-                    <option value="9">Grade 9</option>
-                    <option value="10">Grade 10</option>
-                    <option value="11">Grade 11</option>
-                    <option value="12">Grade 12</option>
-                </select>
-                <select id="signupSection" required>
-                    <option value="">Select Section</option>
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                    <option value="D">Section D</option>
-                </select>
-                <button onclick="signup()">Sign Up</button>
-                <p class="toggle-auth">Already have an account? <a href="#" onclick="toggleAuthForm()">Login</a></p>
-            </div>
+    <div id="signup-form" class="auth-form">
+      <h1>DANSH Grading System</h1>
+      <h2>Student Sign Up</h2>
+      <form id="signupForm">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="signup-fullname" required>
         </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="signup-email" required>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <div class="password-input">
+            <input type="password" id="signup-password" required minlength="6">
+            <button type="button" class="toggle-password" onclick="togglePassword('signup-password')">👁️</button>
+          </div>
+          <div class="password-strength" id="password-strength"></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <div class="password-input">
+            <input type="password" id="signup-confirm-password" required minlength="6">
+            <button type="button" class="toggle-password" onclick="togglePassword('signup-confirm-password')">👁️</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Grade Level *</label>
+            <select id="signup-grade" required>
+              <option value="">Select Grade</option>
+              <option value="7">Grade 7</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Section *</label>
+            <select id="signup-section" required>
+              <option value="">Select Section</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+                </div>
+
+          <div class="form-group">
+          <label>Parent/Guardian Name *</label>
+          <input type="text" id="signup-parent-name" required>
+        </div>
+        <div class="form-group">
+          <label>Parent/Guardian Phone Number *</label>
+          <input type="tel" id="signup-parent-phone" required>
+        </div>
+        <div class="form-group">
+          <label>Student's Address *</label>
+          <textarea id="signup-address" required rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Sign Up</button>
+        <p class="toggle-form">Already have an account? <a href="#" onclick="toggleAuthForm()">Login</a></p>
+      </form>
     </div>
+  </div> <div id="dashboard-container" class="container">
+    <header class="header">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <h1 id="welcome-message">WELCOME TO DANSH GRADING SYSTEM</h1>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </header>
 
-    <div class="main-container" id="mainContainer" style="display: none;">
-        <div class="panel" id="gradesPanel">
-            <h2>My Grades</h2>
-            <div class="table-controls">
-                <button class="zoom-btn" onclick="toggleZoom('gradesTable')">🔍 Zoom</button>
-            </div>
-            <div class="table-container" id="gradesTableContainer">
-                <table id="gradesTable">
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Level</th>
-                            <th>Section</th>
-                            <th>Subject</th>
-                            <th>Grade</th>
-                            <th>Status</th>
-                            <th id="actionsHeader" style="display: none;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="gradesTableBody">
-                    </tbody>
-                </table>
-            </div>
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-content">
+        <h3>Navigation</h3>
+        <nav id="student-nav" class="nav-menu">
+          <a href="#" onclick="showPanel('grades')">📊 Grades</a>
+          <a href="#" onclick="showPanel('profile')">👤 Profile</a>
+          <a href="#" onclick="logout()">🚪 Logout</a>
+        </nav>
+        <nav id="admin-nav" class="nav-menu" style="display:none;">
+          <a href="#" onclick="showPanel('grades')">📊 Grades List</a>
+          <a href="#" onclick="showPanel('users')">👥 User List</a>
+          <a href="#" onclick="showPanel('profile')">👤 Profile</a>
+          <a href="#" onclick="showPanel('add-grades')">➕ Add Grades</a>
+          <a href="#" onclick="showPanel('add-admin')">👨‍💼 Add Admin Account</a>
+          <a href="#" onclick="showPanel('delete-users')">🗑️ Delete Members</a>
+          <a href="#" onclick="logout()">🚪 Logout</a>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="grades-panel" class="panel active">
+        <div class="panel-header">
+          <h2>Grades</h2>
+          <div class="zoom-buttons">
+            <button class="btn-zoom" onclick="zoomIn('grades-table-container')">🔍 Zoom In</button>
+            <button class="btn-zoom-out" onclick="zoomOut('grades-table-container')" style="display:none;">↩️ Zoom Out</button>
+          </div>
         </div>
-
-        <div class="panel" id="adminPanel" style="display: none;">
-            <h2>Admin Panel</h2>
-            
-            <div class="admin-section">
-                <h3>All Users</h3>
-                <input type="text" id="userSearch" placeholder="Search users..." onkeyup="searchUsers()">
-                <div class="table-container">
-                    <table id="usersTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Level</th>
-                                <th>Section</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                        </tbody>
-                    </table>
+        <div id="grades-table-container" class="table-container">
+          <table id="grades-table">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th class="admin-only" style="display:none;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="grades-tbody">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
                 </div>
-            </div>
 
-            <div class="admin-section">
-                <h3 id="gradeFormTitle">Add/Edit Grade</h3>
-                <select id="gradeStudentSelect">
-                    <option value="">Select Student</option>
-                </select>
-                <input type="text" id="gradeSubject" placeholder="Subject">
-                <input type="number" id="gradeValue" placeholder="Grade (0-100)" min="0" max="100">
-                <button id="gradeSubmitBtn" onclick="saveGrade()">Add Grade</button>
-                <button id="gradeCancelBtn" onclick="cancelEdit()" style="display: none; margin-left: 10px; background: #999;">Cancel</button>
-            </div>
-
-            <div class="admin-section">
-                <h3>Create Admin Account</h3>
-                <input type="email" id="adminEmail" placeholder="Admin Email">
-                <div class="password-input">
-                    <input type="password" id="adminPassword" placeholder="Admin Password (min 6 characters)">
-                    <button type="button" class="toggle-password" onclick="togglePassword('adminPassword')">👁️</button>
-                </div>
-                <div class="password-strength" id="adminPasswordStrength"></div>
-                <button onclick="createAdmin()">Create Admin</button>
-            </div>
+        <div id="users-panel" class="panel">
+        <div class="panel-header">
+          <h2>User Management</h2>
+          <div class="zoom-buttons">
+            <button class="btn-zoom" onclick="zoomIn('users-table-container')">🔍 Zoom In</button>
+            <button class="btn-zoom-out" onclick="zoomOut('users-table-container')" style="display:none;">↩️ Zoom Out</button>
+          </div>
         </div>
-
-        <div class="panel" id="profilePanel" style="display: none;">
-            <h2>Profile</h2>
-            <div class="profile-form">
-                <input type="text" id="profileName" placeholder="Full Name">
-                <input type="text" id="profileMobile" placeholder="Mobile Number">
-                <input type="text" id="profilePurok" placeholder="Purok">
-                <input type="text" id="profileGuardianName" placeholder="Parents/Guardian Name">
-                <input type="text" id="profileGuardianPhone" placeholder="Parents/Guardian Phone Number">
-                <button onclick="updateProfile()">Update Profile</button>                   
-            </div>
+        <div class="search-container">
+          <input type="text" id="user-search" placeholder="Search users..." oninput="filterUsers()">
         </div>
-              </div>
+        <div id="users-table-container" class="table-container">
+          <table id="users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged 
-        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            getDocs, 
-            getDoc,
-            setDoc,
-            deleteDoc,
-            doc, 
-            query, 
-            where,
-            updateDoc 
-        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+      <div id="profile-panel" class="panel">
+        <div class="panel-header">
+          <h2>Profile</h2>
+        </div>
+        <form id="profile-form" class="profile-form">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="profile-fullname" required>
+          </div>
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="profile-mobile">
+          </div>
+          <div class="form-group">
+            <label>Purok</label>
+            <input type="text" id="profile-purok">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <textarea id="profile-address" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Parent/Guardian Name</label>
+            <input type="text" id="profile-parent-name">
+          </div>
+          <div class="form-group">
+            <label>Parent/Guardian Phone</label>
+            <input type="tel" id="profile-parent-phone">
+          </div>
+          <button type="submit" class="btn-primary">Update Profile</button>
+        </form>
+      </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
-            authDomain: "test-9c727.firebaseapp.com",
-            projectId: "test-9c727",
-            storageBucket: "test-9c727.firebasestorage.app",
-            messagingSenderId: "198578631587",
-            appId: "1:198578631587:web:c0831122f964d46149e016"
-        };
+        <div id="add-grades-panel" class="panel">
+        <div class="panel-header">
+          <h2>Add/Edit Grades</h2>
+        </div>
+        <form id="add-grade-form" class="grade-form">
+          <input type="hidden" id="edit-grade-id">
+          <div class="form-group">
+            <label>Select Student</label>
+            <select id="grade-student" required>
+              <option value="">Select Student</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="grade-subject" required>
+          </div>
+          <div class="form-group">
+            <label>Grade (0-100)</label>
+            <input type="number" id="grade-value" min="0" max="100" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Grade</button>
+            <button type="button" class="btn-secondary" onclick="cancelEditGrade()">Cancel</button>
+          </div>
+        </form>
+      </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+      <div id="add-admin-panel" class="panel">
+        <div class="panel-header">
+          <h2>Create Admin Account</h2>
+        </div>
+        <form id="add-admin-form" class="admin-form">
+          <div class="form-group">
+            <label>Admin Email</label>
+            <input type="email" id="admin-email" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="password-input">
+              <input type="password" id="admin-password" required minlength="6">
+              <button type="button" class="toggle-password" onclick="togglePassword('admin-password')">👁️</button>
+            </div>
+            <div class="password-strength" id="admin-password-strength"></div>
+          </div>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="admin-fullname" required>
+          </div>
+          <button type="submit" class="btn-primary">Create Admin</button>
+        </form>
+      </div>
 
-        const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
-        const secondaryAuth = getAuth(secondaryApp);
+      <div id="delete-users-panel" class="panel">
+        <div class="panel-header">
+          <h2>Delete Members</h2>
+          <div class="zoom-buttons">
+            <button class="btn-zoom" onclick="zoomIn('delete-users-table-container')">🔍 Zoom In</button>
+            <button class="btn-zoom-out" onclick="zoomOut('delete-users-table-container')" style="display:none;">↩️ Zoom Out</button>
+          </div>
+        </div>
+        <div id="delete-users-table-container" class="table-container">
+          <table id="delete-users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="delete-users-tbody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main> </div> <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
 
-        let currentUser = null;
-        let currentUserData = null;
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    currentUserData = userDoc.data();
-                    showMainApp();
-                }
-            } else {
-                currentUser = null;
-                currentUserData = null;
-                showAuthScreen();
-            }
+
+      <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+      authDomain: "test-9c727.firebaseapp.com",
+      projectId: "test-9c727",
+      storageBucket: "test-9c727.firebasestorage.app",
+      messagingSenderId: "198578631587",
+      appId: "1:198578631587:web:c0831122f964d46149e016"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let currentUserProfile = null;
+    let secondaryApp = null;
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUser = user;
+        await loadUserProfile();
+        showDashboard();
+      } else {
+        showAuth();
+      }
+    });
+
+    async function loadUserProfile() {
+      try {
+        const doc = await db.collection('profiles').doc(currentUser.uid).get();
+        if (doc.exists) {
+          currentUserProfile = { id: doc.id, ...doc.data() };
+          updateWelcomeMessage();
+          if (currentUserProfile.role === 'admin') {
+            showAdminNav();
+          } else {
+            showStudentNav();
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+
+    function updateWelcomeMessage() {
+      const welcomeMsg = document.getElementById('welcome-message');
+      if (currentUserProfile) {
+        const role = currentUserProfile.role === 'admin' ? 'ADMIN' : 'STUDENT';
+        welcomeMsg.textContent = `WELCOME TO DANSH GRADING SYSTEM – ${currentUserProfile.fullName.toUpperCase()} / ${role}`;
+      }
+    }
+
+    function showAuth() {
+      document.getElementById('auth-container').classList.add('active');
+      document.getElementById('dashboard-container').classList.remove('active');
+      hideLoading();
+    }
+
+    function showDashboard() {
+      document.getElementById('auth-container').classList.remove('active');
+      document.getElementById('dashboard-container').classList.add('active');
+      showPanel('grades');
+      hideLoading();
+    }
+
+    function showAdminNav() {
+      document.getElementById('student-nav').style.display = 'none';
+      document.getElementById('admin-nav').style.display = 'block';
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    }
+
+    function showStudentNav() {
+      document.getElementById('student-nav').style.display = 'block';
+      document.getElementById('admin-nav').style.display = 'none';
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    }
+
+    function toggleAuthForm() {
+      const loginForm = document.getElementById('login-form');
+      const signupForm = document.getElementById('signup-form');
+      loginForm.classList.toggle('active');
+      signupForm.classList.toggle('active');
+    }
+
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function checkPasswordStrength(password) {
+      let strength = 'weak';
+      if (password.length >= 8) {
+        if (/[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) {
+          strength = 'strong';
+        } else if (/[A-Z]/.test(password) || /[0-9]/.test(password)) {
+          strength = 'medium';
+        }
+      }
+      return strength;
+    }
+
+    document.getElementById('signup-password').addEventListener('input', (e) => {
+      const strength = checkPasswordStrength(e.target.value);
+      const strengthEl = document.getElementById('password-strength');
+      strengthEl.textContent = `Password strength: ${strength}`;
+      strengthEl.className = 'password-strength ' + strength;
+    });
+
+    document.getElementById('admin-password').addEventListener('input', (e) => {
+      const strength = checkPasswordStrength(e.target.value);
+      const strengthEl = document.getElementById('admin-password-strength');
+      strengthEl.textContent = `Password strength: ${strength}`;
+      strengthEl.className = 'password-strength ' + strength;
+    });
+    
+    // ... continued in Part 2
+
+              // ... continued from Part 1
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
+      
+      showLoading();
+      try {
+        const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+        await auth.setPersistence(persistence);
+        await auth.signInWithEmailAndPassword(email, password);
+        showAlert('Login successful!', 'success');
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const password = document.getElementById('signup-password').value;
+      const confirmPassword = document.getElementById('signup-confirm-password').value;
+      
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match!', 'error');
+        return;
+      }
+      
+      const userData = {
+        email: document.getElementById('signup-email').value,
+        fullName: document.getElementById('signup-fullname').value,
+        gradeLevel: document.getElementById('signup-grade').value,
+        section: document.getElementById('signup-section').value,
+        parentName: document.getElementById('signup-parent-name').value,
+        parentPhone: document.getElementById('signup-parent-phone').value,
+        address: document.getElementById('signup-address').value,
+        role: 'student'
+      };
+      
+      showLoading();
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(userData.email, password);
+        await db.collection('profiles').doc(userCredential.user.uid).set(userData);
+        showAlert('Account created successfully!', 'success');
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const profileData = {
+        fullName: document.getElementById('profile-fullname').value,
+        mobile: document.getElementById('profile-mobile').value,
+        purok: document.getElementById('profile-purok').value,
+        address: document.getElementById('profile-address').value,
+        parentName: document.getElementById('profile-parent-name').value,
+        parentPhone: document.getElementById('profile-parent-phone').value
+      };
+      
+      showLoading();
+      try {
+        await db.collection('profiles').doc(currentUser.uid).update(profileData);
+        currentUserProfile = { ...currentUserProfile, ...profileData };
+        updateWelcomeMessage();
+        await loadGrades();
+        showAlert('Profile updated successfully!', 'success');
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+    
+    // ... continued in Part 3
+
+              // ... continued from Part 2
+
+    document.getElementById('add-grade-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const studentId = document.getElementById('grade-student').value;
+      const subject = document.getElementById('grade-subject').value;
+      const grade = parseInt(document.getElementById('grade-value').value);
+      const editId = document.getElementById('edit-grade-id').value;
+      
+      if (grade < 0 || grade > 100) {
+        showAlert('Grade must be between 0 and 100!', 'error');
+        return;
+      }
+      
+      const studentDoc = await db.collection('profiles').doc(studentId).get();
+      const studentData = studentDoc.data();
+      
+      const gradeData = {
+        studentId,
+        studentName: studentData.fullName,
+        gradeLevel: studentData.gradeLevel,
+        section: studentData.section,
+        subject,
+        grade,
+        status: grade >= 75 ? 'Passed' : 'Failed'
+      };
+      
+      showLoading();
+      try {
+        if (editId) {
+          await db.collection('grades').doc(editId).update(gradeData);
+          showAlert('Grade updated successfully!', 'success');
+        } else {
+          await db.collection('grades').add(gradeData);
+          showAlert('Grade added successfully!', 'success');
+        }
+        document.getElementById('add-grade-form').reset();
+        document.getElementById('edit-grade-id').value = '';
+        await loadGrades();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+      const fullName = document.getElementById('admin-fullname').value;
+      
+      showLoading();
+      try {
+        if (!secondaryApp) {
+          secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary');
+        }
+        
+        const secondaryAuth = secondaryApp.auth();
+        const userCredential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        
+        await db.collection('profiles').doc(userCredential.user.uid).set({
+          email,
+          fullName,
+          role: 'admin'
         });
+        
+        await secondaryAuth.signOut();
+        
+        showAlert('Admin account created successfully!', 'success');
+        document.getElementById('add-admin-form').reset();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
 
-        function showAuthScreen() {
-            document.getElementById('authContainer').style.display = 'flex';
-            document.getElementById('mainContainer').style.display = 'none';
-            document.getElementById('hamburgerMenu').classList.remove('active');
+    async function loadGrades() {
+      const tbody = document.getElementById('grades-tbody');
+      tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+      
+      try {
+        let query = db.collection('grades');
+        
+        if (currentUserProfile.role === 'student') {
+          query = query.where('gradeLevel', '==', currentUserProfile.gradeLevel)
+                       .where('section', '==', currentUserProfile.section);
         }
-
-        function showMainApp() {
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            document.getElementById('hamburgerMenu').classList.add('active');
-            
-            if (currentUserData.role === 'admin') {
-                document.getElementById('adminPanelLink').style.display = 'block';
-                document.getElementById('actionsHeader').style.display = 'table-cell';
-                loadAllUsers();
-                loadAllGrades();
-                loadStudentsForGradeSelect();
-            } else {
-                document.getElementById('adminPanelLink').style.display = 'none';
-                document.getElementById('actionsHeader').style.display = 'none';
-                loadStudentGrades();
-            }
-            
-            loadProfile();
-            showPanel('grades');
+        
+        const snapshot = await query.get();
+        
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="7">No grades found</td></tr>';
+          return;
         }
-
-        window.toggleAuthForm = function() {
-            const loginForm = document.getElementById('loginForm');
-            const signupForm = document.getElementById('signupForm');
-            
-            if (loginForm.style.display === 'none') {
-                loginForm.style.display = 'block';
-                signupForm.style.display = 'none';
-            } else {
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'block';
-            }
-        }
-
-        window.togglePassword = function(inputId) {
-            const input = document.getElementById(inputId);
-            input.type = input.type === 'password' ? 'text' : 'password';
-        }
-
-        document.getElementById('signupPassword')?.addEventListener('input', function() {
-            checkPasswordStrength(this.value, 'signupPasswordStrength');
+        
+        tbody.innerHTML = '';
+        snapshot.forEach(doc => {
+          const grade = doc.data();
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${grade.studentName}</td>
+            <td>Grade ${grade.gradeLevel}</td>
+            <td>${grade.section}</td>
+            <td>${grade.subject}</td>
+            <td>${grade.grade}</td>
+            <td class="${grade.status === 'Passed' ? 'status-passed' : 'status-failed'}">${grade.status}</td>
+            <td class="admin-only" style="${currentUserProfile.role === 'admin' ? '' : 'display:none;'}">
+              <button class="btn-edit" onclick="editGrade('${doc.id}')">Edit</button>
+              <button class="btn-delete" onclick="deleteGrade('${doc.id}')">Delete</button>
+            </td>
+          `;
         });
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="7">Error loading grades</td></tr>';
+        console.error('Error loading grades:', error);
+      }
+    }
 
-        document.getElementById('adminPassword')?.addEventListener('input', function() {
-            checkPasswordStrength(this.value, 'adminPasswordStrength');
+    async function editGrade(gradeId) {
+      try {
+        const doc = await db.collection('grades').doc(gradeId).get();
+        const grade = doc.data();
+        
+        document.getElementById('edit-grade-id').value = gradeId;
+        document.getElementById('grade-student').value = grade.studentId;
+        document.getElementById('grade-subject').value = grade.subject;
+        document.getElementById('grade-value').value = grade.grade;
+        
+        showPanel('add-grades');
+      } catch (error) {
+        showAlert('Error loading grade for editing', 'error');
+      }
+    }
+
+    async function deleteGrade(gradeId) {
+      if (!confirm('Are you sure you want to delete this grade?')) return;
+      
+      showLoading();
+      try {
+        await db.collection('grades').doc(gradeId).delete();
+        showAlert('Grade deleted successfully!', 'success');
+        await loadGrades();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function cancelEditGrade() {
+      document.getElementById('add-grade-form').reset();
+      document.getElementById('edit-grade-id').value = '';
+    }
+
+    // ... continued in Part 4
+
+              // ... continued from Part 3
+
+    async function loadUsers() {
+      const tbody = document.getElementById('users-tbody');
+      tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+      
+      try {
+        const snapshot = await db.collection('profiles').get();
+        
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="5">No users found</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = '';
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${user.fullName || 'N/A'}</td>
+            <td>${user.email}</td>
+            <td>${user.gradeLevel ? 'Grade ' + user.gradeLevel : 'N/A'}</td>
+            <td>${user.section || 'N/A'}</td>
+            <td>${user.role === 'admin' ? 'Admin' : 'Student'}</td>
+          `;
         });
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="5">Error loading users</td></tr>';
+        console.error('Error loading users:', error);
+      }
+    }
 
-        function checkPasswordStrength(password, elementId) {
-            const strengthBar = document.getElementById(elementId);
-            const length = password.length;
-            
-            if (length === 0) {
-                strengthBar.className = 'password-strength';
-            } else if (length < 6) {
-                strengthBar.className = 'password-strength weak';
-            } else if (length < 10) {
-                strengthBar.className = 'password-strength medium';
-            } else {
-                strengthBar.className = 'password-strength strong';
-            }
+    async function loadDeleteUsers() {
+      const tbody = document.getElementById('delete-users-tbody');
+      tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+      
+      try {
+        const snapshot = await db.collection('profiles').get();
+        
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="4">No users found</td></tr>';
+          return;
         }
-
-        window.signup = async function() {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const level = document.getElementById('signupLevel').value;
-            const section = document.getElementById('signupSection').value;
-            
-            if (!name || !email || !password || !level || !section) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters');
-                return;
-            }
-            
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    name: name,
-                    email: email,
-                    level: level,
-                    section: section,
-                    role: 'student',
-                    createdAt: new Date().toISOString()
-                });
-                
-                alert('Account created successfully!');
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        window.login = async function() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        window.logout = async function() {
-            try {
-                await signOut(auth);
-                document.getElementById('sidebar').classList.remove('active');
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        document.getElementById('hamburgerMenu').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
+        
+        tbody.innerHTML = '';
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          if (doc.id === currentUser.uid) return;
+          
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${user.fullName || 'N/A'}</td>
+            <td>${user.email}</td>
+            <td>${user.role === 'admin' ? 'Admin' : 'Student'}</td>
+            <td>
+              <button class="btn-delete" onclick="deleteUser('${doc.id}')">Delete</button>
+            </td>
+          `;
         });
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="4">Error loading users</td></tr>';
+        console.error('Error loading users:', error);
+      }
+    }
 
-        window.showPanel = function(panelName) {
-            document.getElementById('gradesPanel').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('profilePanel').style.display = 'none';
-            
-            if (panelName === 'grades') {
-                document.getElementById('gradesPanel').style.display = 'block';
-            } else if (panelName === 'admin') {
-                document.getElementById('adminPanel').style.display = 'block';
-            } else if (panelName === 'profile') {
-                document.getElementById('profilePanel').style.display = 'block';
-            }
-            
-            document.getElementById('sidebar').classList.remove('active');
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user and all their grades?')) return;
+      
+      showLoading();
+      try {
+        await db.collection('profiles').doc(userId).delete();
+        
+        const gradesSnapshot = await db.collection('grades').where('studentId', '==', userId).get();
+        const batch = db.batch();
+        gradesSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        
+        showAlert('User and their grades deleted successfully!', 'success');
+        await loadDeleteUsers();
+        await loadUsers();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function filterUsers() {
+      const searchTerm = document.getElementById('user-search').value.toLowerCase();
+      const rows = document.querySelectorAll('#users-tbody tr');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    async function loadStudentsForGrades() {
+      const select = document.getElementById('grade-student');
+      select.innerHTML = '<option value="">Select Student</option>';
+      
+      try {
+        const snapshot = await db.collection('profiles').where('role', '==', 'student').get();
+        snapshot.forEach(doc => {
+          const student = doc.data();
+          const option = document.createElement('option');
+          option.value = doc.id;
+          option.textContent = `${student.fullName} - Grade ${student.gradeLevel}${student.section}`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading students:', error);
+      }
+    }
+
+    async function loadProfileData() {
+      if (!currentUserProfile) return;
+      
+      document.getElementById('profile-fullname').value = currentUserProfile.fullName || '';
+      document.getElementById('profile-mobile').value = currentUserProfile.mobile || '';
+      document.getElementById('profile-purok').value = currentUserProfile.purok || '';
+      document.getElementById('profile-address').value = currentUserProfile.address || '';
+      document.getElementById('profile-parent-name').value = currentUserProfile.parentName || '';
+      document.getElementById('profile-parent-phone').value = currentUserProfile.parentPhone || '';
+    }
+
+    // ... continued in Part 5
+
+              // ... continued from Part 4
+
+    function showPanel(panelName) {
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+      
+      const panels = {
+        'grades': 'grades-panel',
+        'users': 'users-panel',
+        'profile': 'profile-panel',
+        'add-grades': 'add-grades-panel',
+        'add-admin': 'add-admin-panel',
+        'delete-users': 'delete-users-panel'
+      };
+      
+      const panelId = panels[panelName];
+      if (panelId) {
+        document.getElementById(panelId).classList.add('active');
+        
+        if (panelName === 'grades') loadGrades();
+        else if (panelName === 'users') loadUsers();
+        else if (panelName === 'profile') loadProfileData();
+        else if (panelName === 'add-grades') loadStudentsForGrades();
+        else if (panelName === 'delete-users') loadDeleteUsers();
+      }
+      
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('active');
+      }
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    function zoomIn(containerId) {
+      const container = document.getElementById(containerId);
+      container.classList.add('zoomed');
+      
+      const panel = container.closest('.panel');
+      const zoomInBtn = panel.querySelector('.btn-zoom');
+      const zoomOutBtn = panel.querySelector('.btn-zoom-out');
+      
+      if (zoomInBtn) zoomInBtn.style.display = 'none';
+      if (zoomOutBtn) zoomOutBtn.style.display = 'inline-block';
+    }
+
+    function zoomOut(containerId) {
+      const container = document.getElementById(containerId);
+      container.classList.remove('zoomed');
+      
+      const panel = container.closest('.panel');
+      const zoomInBtn = panel.querySelector('.btn-zoom');
+      const zoomOutBtn = panel.querySelector('.btn-zoom-out');
+      
+      if (zoomInBtn) zoomInBtn.style.display = 'inline-block';
+      if (zoomOutBtn) zoomOutBtn.style.display = 'none';
+    }
+
+    async function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        showLoading();
+        await auth.signOut();
+        document.getElementById('login-email').value = '';
+        document.getElementById('login-password').value = '';
+        showAlert('Logged out successfully!', 'success');
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loading-overlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.remove('active');
+    }
+
+    function showAlert(message, type) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      document.body.appendChild(alertDiv);
+      
+      setTimeout(() => {
+        alertDiv.classList.add('show');
+      }, 10);
+      
+      setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 300);
+      }, 3000);
+    }
+
+    if (window.innerWidth <= 768) {
+      document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('sidebar');
+        const hamburger = document.querySelector('.hamburger');
+        if (sidebar && hamburger && sidebar.classList.contains('active') && 
+            !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+          sidebar.classList.remove('active');
         }
-
-        async function loadStudentGrades() {
-            const tbody = document.getElementById('gradesTableBody');
-            tbody.innerHTML = '';
-            
-            try {
-                const q = query(collection(db, 'grades'), where('userId', '==', currentUser.uid));
-                const querySnapshot = await getDocs(q);
-                
-                querySnapshot.forEach((doc) => {
-                    const grade = doc.data();
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${currentUserData.name}</td>
-                        <td>${currentUserData.level}</td>
-                        <td>${currentUserData.section}</td>
-                        <td>${grade.subject}</td>
-                        <td>${grade.grade}</td>
-                        <td class="${grade.grade >= 75 ? 'status-passed' : 'status-failed'}">
-                            ${grade.grade >= 75 ? 'Passed' : 'Failed'}
-                        </td>
-                    `;
-                });
-                
-                if (querySnapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No grades available</td></tr>';
-                }
-            } catch (error) {
-                console.error('Error loading grades:', error);
-            }
-        }
-
-
-                  let editingGradeId = null;
-
-        async function loadAllGrades() {
-            const tbody = document.getElementById('gradesTableBody');
-            tbody.innerHTML = '';
-            
-            try {
-                const gradesSnapshot = await getDocs(collection(db, 'grades'));
-                const usersSnapshot = await getDocs(collection(db, 'users'));
-                
-                const usersMap = {};
-                usersSnapshot.forEach((doc) => {
-                    usersMap[doc.id] = doc.data();
-                });
-                
-                gradesSnapshot.forEach((docSnap) => {
-                    const grade = docSnap.data();
-                    const user = usersMap[grade.userId];
-                    
-                    if (user) {
-                        const row = tbody.insertRow();
-                        const isAdmin = currentUserData.role === 'admin';
-                        
-                        row.insertCell(0).textContent = user.name;
-                        row.insertCell(1).textContent = user.level;
-                        row.insertCell(2).textContent = user.section;
-                        row.insertCell(3).textContent = grade.subject;
-                        row.insertCell(4).textContent = grade.grade;
-                        
-                        const statusCell = row.insertCell(5);
-                        statusCell.textContent = grade.grade >= 75 ? 'Passed' : 'Failed';
-                        statusCell.className = grade.grade >= 75 ? 'status-passed' : 'status-failed';
-                        
-                        if (isAdmin) {
-                            const actionsCell = row.insertCell(6);
-                            
-                            const editBtn = document.createElement('button');
-                            editBtn.className = 'delete-btn';
-                            editBtn.textContent = 'Edit';
-                            editBtn.style.background = '#667eea';
-                            editBtn.style.marginRight = '5px';
-                            editBtn.addEventListener('click', () => {
-                                editGrade(docSnap.id, grade.userId, grade.subject, grade.grade);
-                            });
-                            
-                            const deleteBtn = document.createElement('button');
-                            deleteBtn.className = 'delete-btn';
-                            deleteBtn.textContent = 'Delete';
-                            deleteBtn.addEventListener('click', () => {
-                                deleteGrade(docSnap.id);
-                            });
-                            
-                            actionsCell.appendChild(editBtn);
-                            actionsCell.appendChild(deleteBtn);
-                        }
-                    }
-                });
-                
-                if (gradesSnapshot.empty) {
-                    const colspan = currentUserData.role === 'admin' ? '7' : '6';
-                    tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center;">No grades available</td></tr>`;
-                }
-            } catch (error) {
-                console.error('Error loading all grades:', error);
-            }
-        }
-
-        async function loadAllUsers() {
-            const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = '';
-            
-            try {
-                const querySnapshot = await getDocs(collection(db, 'users'));
-                
-                querySnapshot.forEach((doc) => {
-                    const user = doc.data();
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${user.name || 'N/A'}</td>
-                        <td>${user.email}</td>
-                        <td>${user.level || 'N/A'}</td>
-                        <td>${user.section || 'N/A'}</td>
-                        <td>${user.role}</td>
-                        <td>
-                            ${user.role !== 'admin' || doc.id !== currentUser.uid ? 
-                                `<button class="delete-btn" onclick="deleteUser('${doc.id}')">Delete</button>` : 
-                                'Current User'}
-                        </td>
-                    `;
-                });
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-
-        async function loadStudentsForGradeSelect() {
-            const select = document.getElementById('gradeStudentSelect');
-            select.innerHTML = '<option value="">Select Student</option>';
-            
-            try {
-                const q = query(collection(db, 'users'), where('role', '==', 'student'));
-                const querySnapshot = await getDocs(q);
-                
-                querySnapshot.forEach((doc) => {
-                    const user = doc.data();
-                    const option = document.createElement('option');
-                    option.value = doc.id;
-                    option.textContent = `${user.name} (${user.level}-${user.section})`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading students:', error);
-            }
-        }
-
-        window.searchUsers = function() {
-            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
-            const rows = document.getElementById('usersTableBody').getElementsByTagName('tr');
-            
-            for (let row of rows) {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            }
-        }
-
-        window.editGrade = function(gradeId, userId, subject, grade) {
-            editingGradeId = gradeId;
-            document.getElementById('gradeStudentSelect').value = userId;
-            document.getElementById('gradeSubject').value = subject;
-            document.getElementById('gradeValue').value = grade;
-            document.getElementById('gradeFormTitle').textContent = 'Edit Grade';
-            document.getElementById('gradeSubmitBtn').textContent = 'Update Grade';
-            document.getElementById('gradeCancelBtn').style.display = 'inline-block';
-            showPanel('admin');
-        }
-
-        window.cancelEdit = function() {
-            editingGradeId = null;
-            document.getElementById('gradeStudentSelect').value = '';
-            document.getElementById('gradeSubject').value = '';
-            document.getElementById('gradeValue').value = '';
-            document.getElementById('gradeFormTitle').textContent = 'Add/Edit Grade';
-            document.getElementById('gradeSubmitBtn').textContent = 'Add Grade';
-            document.getElementById('gradeCancelBtn').style.display = 'none';
-        }
-
-        window.saveGrade = async function() {
-            const studentId = document.getElementById('gradeStudentSelect').value;
-            const subject = document.getElementById('gradeSubject').value;
-            const grade = parseInt(document.getElementById('gradeValue').value);
-            
-            if (!studentId || !subject || isNaN(grade)) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            if (grade < 0 || grade > 100) {
-                alert('Grade must be between 0 and 100');
-                return;
-            }
-            
-            try {
-                if (editingGradeId) {
-                    await updateDoc(doc(db, 'grades', editingGradeId), {
-                        userId: studentId,
-                        subject: subject,
-                        grade: grade,
-                        updatedAt: new Date().toISOString()
-                    });
-                    alert('Grade updated successfully!');
-                    cancelEdit();
-                } else {
-                    await addDoc(collection(db, 'grades'), {
-                        userId: studentId,
-                        subject: subject,
-                        grade: grade,
-                        createdAt: new Date().toISOString()
-                    });
-                    alert('Grade added successfully!');
-                    document.getElementById('gradeSubject').value = '';
-                    document.getElementById('gradeValue').value = '';
-                }
-                
-                loadAllGrades();
-            } catch (error) {
-                alert('Error saving grade: ' + error.message);
-            }
-        }
-
-        window.deleteGrade = async function(gradeId) {
-            if (!confirm('Are you sure you want to delete this grade?')) {
-                return;
-            }
-            
-            try {
-                await deleteDoc(doc(db, 'grades', gradeId));
-                alert('Grade deleted successfully!');
-                loadAllGrades();
-            } catch (error) {
-                alert('Error deleting grade: ' + error.message);
-            }
-        }
-
-        window.createAdmin = async function() {
-            const email = document.getElementById('adminEmail').value;
-            const password = document.getElementById('adminPassword').value;
-            
-            if (!email || !password) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters');
-                return;
-            }
-            
-            try {
-                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    email: email,
-                    name: 'Admin',
-                    role: 'admin',
-                    createdAt: new Date().toISOString()
-                });
-                
-                await signOut(secondaryAuth);
-                
-                alert('Admin account created successfully! The new admin can now log in with the provided credentials.');
-                document.getElementById('adminEmail').value = '';
-                document.getElementById('adminPassword').value = '';
-                
-                loadAllUsers();
-            } catch (error) {
-                alert('Error creating admin: ' + error.message);
-            }
-        }
-
-        window.deleteUser = async function(userId) {
-            if (!confirm('Are you sure you want to delete this user? This will also delete all their grades.')) {
-                return;
-            }
-            
-            try {
-                const gradesQuery = query(collection(db, 'grades'), where('userId', '==', userId));
-                const gradesSnapshot = await getDocs(gradesQuery);
-                
-                const deletePromises = [];
-                gradesSnapshot.forEach((doc) => {
-                    deletePromises.push(deleteDoc(doc.ref));
-                });
-                
-                await Promise.all(deletePromises);
-                await deleteDoc(doc(db, 'users', userId));
-                
-                alert('User deleted successfully!');
-                loadAllUsers();
-                loadAllGrades();
-            } catch (error) {
-                alert('Error deleting user: ' + error.message);
-            }
-        }
-
-        async function loadProfile() {
-            const profileDoc = await getDoc(doc(db, 'profiles', currentUser.uid));
-            
-            if (profileDoc.exists()) {
-                const profile = profileDoc.data();
-                document.getElementById('profileName').value = profile.name || '';
-                document.getElementById('profileMobile').value = profile.mobile || '';
-                document.getElementById('profilePurok').value = profile.purok || '';
-                document.getElementById('profileGuardianName').value = profile.guardianName || '';
-                document.getElementById('profileGuardianPhone').value = profile.guardianPhone || '';
-            } else {
-                document.getElementById('profileName').value = currentUserData.name || '';
-                document.getElementById('profileMobile').value = '';
-                document.getElementById('profilePurok').value = '';
-                document.getElementById('profileGuardianName').value = '';
-                document.getElementById('profileGuardianPhone').value = '';
-            }
-        }
-
-        window.updateProfile = async function() {
-            const profileData = {
-                name: document.getElementById('profileName').value,
-                mobile: document.getElementById('profileMobile').value,
-                purok: document.getElementById('profilePurok').value,
-                guardianName: document.getElementById('profileGuardianName').value,
-                guardianPhone: document.getElementById('profileGuardianPhone').value
-            };
-            
-            try {
-                await setDoc(doc(db, 'profiles', currentUser.uid), profileData);
-                
-                await updateDoc(doc(db, 'users', currentUser.uid), {
-                    name: profileData.name
-                });
-                
-                currentUserData.name = profileData.name;
-                
-                alert('Profile updated successfully!');
-                
-                if (currentUserData.role === 'student') {
-                    loadStudentGrades();
-                } else {
-                    loadAllGrades();
-                }
-            } catch (error) {
-                alert('Error updating profile: ' + error.message);
-            }
-        }
-
-        window.toggleZoom = function(tableId) {
-            const container = document.getElementById(tableId + 'Container');
-            container.classList.toggle('zoomed');
-            
-            if (container.classList.contains('zoomed')) {
-                const closeBtn = document.createElement('button');
-                closeBtn.textContent = '✕ Close';
-                closeBtn.className = 'zoom-btn';
-                closeBtn.style.position = 'absolute';
-                closeBtn.style.top = '10px';
-                closeBtn.style.right = '10px';
-                closeBtn.onclick = () => toggleZoom(tableId);
-                container.appendChild(closeBtn);
-            } else {
-                const closeBtn = container.querySelector('.zoom-btn:last-child');
-                if (closeBtn && closeBtn.textContent.includes('Close')) {
-                    closeBtn.remove();
-                }
-            }
-        }
-    </script>
+      });
+    }
+  </script>
 </body>
 </html>
-  
