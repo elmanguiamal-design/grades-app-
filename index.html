@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DANSH Grading System</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: linear-gradient(135deg, #87CEEB 0%, #FFD700 100%);
+      --bg-secondary: white;
+      --text-primary: #333;
+      --text-secondary: #555;
+      --text-tertiary: #666;
+      --border-color: #ddd;
+      --hover-bg: #f5f5f5;
+      --table-header-bg: linear-gradient(135deg, #2196F3, #1976D2);
+      --button-primary-bg: #2196F3;
+      --button-primary-hover: #1976D2;
+    }
+
+    body.dark-mode {
+      --bg-primary: linear-gradient(135deg, #1a237e 0%, #424242 100%);
+      --bg-secondary: #2c2c2c;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --text-tertiary: #999;
+      --border-color: #444;
+      --hover-bg: #3a3a3a;
+      --table-header-bg: linear-gradient(135deg, #1565C0, #0D47A1);
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .container {
+      display: none;
+      height: 100vh;
+    }
+
+    .container.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #auth-container {
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .auth-form {
+      display: none;
+      background: var(--bg-secondary);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 100%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .auth-form h1 {
+      color: #2196F3;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .auth-form h2 {
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 22px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #2196F3;
+    }
+
+    .password-input {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 5px;
+    }
+
+    .password-strength {
+      margin-top: 5px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .password-strength.weak { color: #f44336; }
+    .password-strength.medium { color: #ff9800; }
+    .password-strength.strong { color: #4caf50; }
+
+    .verification-code-display {
+      margin-top: 10px;
+      padding: 15px;
+      background: #e3f2fd;
+      border: 2px dashed #2196F3;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+
+    body.dark-mode .verification-code-display {
+      background: #1e3a5f;
+      border-color: #64B5F6;
+    }
+
+    .verification-code-display.show {
+      display: block;
+    }
+
+    .verification-code-display .code {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2196F3;
+      letter-spacing: 3px;
+      margin: 10px 0;
+    }
+
+    body.dark-mode .verification-code-display .code {
+      color: #64B5F6;
+    }
+
+    .verification-code-display p {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .checkbox-label input {
+      margin-right: 8px;
+      width: auto;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--button-primary-bg);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-primary:hover {
+      background: var(--button-primary-hover);
+    }
+
+    .btn-secondary {
+      padding: 10px 20px;
+      background: #757575;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #616161;
+    }
+
+    .toggle-form {
+      text-align: center;
+      margin-top: 20px;
+      color: var(--text-tertiary);
+    }
+
+    .toggle-form a {
+      color: #2196F3;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .toggle-form a:hover {
+      text-decoration: underline;
+    }
+
+    #dashboard-container {
+      position: relative;
+    }
+
+    .header {
+      background: var(--table-header-bg);
+      color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .hamburger {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 5px 10px;
+      display: none;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .btn-logout {
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-logout:hover {
+      background: #d32f2f;
+    }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 60px;
+      width: 250px;
+      height: calc(100vh - 60px);
+      background: var(--bg-secondary);
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-content {
+      padding: 20px;
+    }
+
+    .sidebar h3 {
+      color: #2196F3;
+      margin-bottom: 20px;
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .nav-menu a {
+      padding: 12px 15px;
+      color: var(--text-primary);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-menu a:hover {
+      background: #e3f2fd;
+      color: #2196F3;
+    }
+
+    body.dark-mode .nav-menu a:hover {
+      background: #1e3a5f;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 30px;
+      min-height: calc(100vh - 60px);
+    }
+
+    .panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .panel-header h2 {
+      color: #2196F3;
+      font-size: 28px;
+    }
+
+    .grade-level-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .grade-tab {
+      padding: 10px 20px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--text-primary);
+    }
+
+    .grade-tab:hover {
+      background: #e3f2fd;
+      border-color: #2196F3;
+    }
+
+    body.dark-mode .grade-tab:hover {
+      background: #1e3a5f;
+    }
+
+    .grade-tab.active {
+      background: #2196F3;
+      color: white;
+      border-color: #2196F3;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      background: var(--button-primary-bg);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: var(--button-primary-hover);
+    }
+
+    .pagination button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .pagination .page-info {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .zoom-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-zoom {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+    }
+
+    .btn-zoom-out {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1001;
+      display: none;
+    }
+
+    .table-container.zoomed .btn-zoom {
+      display: none;
+    }
+
+    .table-container.zoomed .btn-zoom-out {
+      display: block;
+    }
+
+    .sidebar.active ~ .main-content .btn-zoom,
+    .sidebar.active ~ .main-content .btn-zoom-out {
+      display: none;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+    }
+
+    .search-container input {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .table-container {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      overflow: auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .table-container.zoomed {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 95vw;
+      height: 90vh;
+      z-index: 1000;
+      max-width: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: var(--table-header-bg);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.2s;
+    }
+
+    tbody tr:hover {
+      background: var(--hover-bg);
+    }
+
+    td {
+      padding: 15px;
+    }
+
+    .status-passed {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
+    .status-failed {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    .status-blocked {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    .btn-edit,
+    .btn-delete,
+    .btn-restore {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .btn-edit {
+      background: #2196F3;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background: #1976D2;
+    }
+
+    .btn-delete {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: #d32f2f;
+    }
+
+    .btn-restore {
+      background: #4caf50;
+      color: white;
+    }
+
+    .btn-restore:hover {
+      background: #388e3c;
+    }
+
+    .profile-form,
+    .grade-form,
+    .admin-form,
+    .settings-form {
+      background: var(--bg-secondary);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .profile-picture-section {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .profile-picture-container {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 20px;
+      border: 4px solid #2196F3;
+      background: var(--hover-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-picture-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-picture-container .placeholder {
+      font-size: 60px;
+      color: var(--text-tertiary);
+    }
+
+    .picture-upload-btn {
+      padding: 10px 20px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .picture-upload-btn:hover {
+      background: #1976D2;
+    }
+
+    #picture-input {
+      display: none;
+    }
+
+    .crop-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .crop-modal.active {
+      display: flex;
+    }
+
+    .crop-container {
+      background: var(--bg-secondary);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 90%;
+      max-height: 90%;
+      overflow: auto;
+    }
+
+    .crop-area {
+      max-width: 500px;
+      max-height: 500px;
+      margin: 20px auto;
+    }
+
+    .crop-area img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .crop-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .theme-toggle label {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #2196F3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      opacity: 0;
+      transform: translateX(100px);
+      transition: all 0.3s ease;
+    }
+
+    .alert.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .alert-success {
+      background: #4caf50;
+    }
+
+    .alert-error {
+      background: #f44336;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 15px;
+      }
+
+      .header h1 {
+        font-size: 14px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-form {
+        padding: 25px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+
+      .panel-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .zoom-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn-zoom,
+      .btn-zoom-out {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 12px;
+      }
+
+      .btn-logout {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  </head>
+<body>
+
+  <div id="auth-container" class="container active">
+    <div id="login-form" class="auth-form active">
+      <h1>DANSH Grading System</h1>
+      <h2>Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="password-input">
+            <input type="password" id="login-password" required>
+            <button type="button" class="toggle-password" onclick="togglePassword('login-password')">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember-me">
+            Remember Me
+          </label>
+        </div>
+        <button type="submit" class="btn-primary">Login</button>
+        <p class="toggle-form">Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign Up</a></p>
+      </form>
+    </div>
+
+    <div id="signup-form" class="auth-form">
+      <h1>DANSH Grading System</h1>
+      <h2>Student Sign Up</h2>
+      <form id="signupForm">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="signup-fullname" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="signup-email" required>
+        </div>
+        <div class="form-group">
+          <label>Verification Code *</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="signup-verification-code" required style="flex: 1;">
+            <button type="button" class="btn-secondary" onclick="sendVerificationCode()" style="margin: 0; width: auto; white-space: nowrap;">Get Code</button>
+          </div>
+          <div id="verification-code-display" class="verification-code-display">
+            <p>Your verification code is:</p>
+            <div class="code" id="displayed-code"></div>
+            <p>Please enter this code above to verify</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <div class="password-input">
+            <input type="password" id="signup-password" required minlength="6">
+            <button type="button" class="toggle-password" onclick="togglePassword('signup-password')">👁️</button>
+          </div>
+          <div class="password-strength" id="password-strength"></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <div class="password-input">
+            <input type="password" id="signup-confirm-password" required minlength="6">
+            <button type="button" class="toggle-password" onclick="togglePassword('signup-confirm-password')">👁️</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Grade Level *</label>
+            <select id="signup-grade" required>
+              <option value="">Select Grade</option>
+              <option value="7">Grade 7</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Section *</label>
+            <select id="signup-section" required>
+              <option value="">Select Section</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Parent/Guardian Name *</label>
+          <input type="text" id="signup-parent-name" required>
+        </div>
+        <div class="form-group">
+          <label>Parent/Guardian Phone Number *</label>
+          <input type="tel" id="signup-parent-phone" required>
+        </div>
+        <div class="form-group">
+          <label>Student's Address *</label>
+          <textarea id="signup-address" required rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Sign Up</button>
+        <p class="toggle-form">Already have an account? <a href="#" onclick="toggleAuthForm()">Login</a></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-container" class="container">
+    <header class="header">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <h1 id="welcome-message">WELCOME TO DANSH GRADING SYSTEM</h1>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-content">
+        <h3>Navigation</h3>
+        <nav id="student-nav" class="nav-menu">
+          <a href="#" onclick="showPanel('grades')">📊 Grades</a>
+          <a href="#" onclick="showPanel('profile')">👤 Profile</a>
+          <a href="#" onclick="showPanel('settings')">⚙️ Settings</a>
+          <a href="#" onclick="logout()">🚪 Logout</a>
+        </nav>
+        <nav id="admin-nav" class="nav-menu" style="display:none;">
+          <a href="#" onclick="showPanel('grades')">📊 Grades List</a>
+          <a href="#" onclick="showPanel('users')">👥 User List</a>
+          <a href="#" onclick="showPanel('profile')">👤 Profile</a>
+          <a href="#" onclick="showPanel('add-grades')">➕ Add Grades</a>
+          <a href="#" onclick="showPanel('add-admin')">👨‍💼 Add Admin Account</a>
+          <a href="#" onclick="showPanel('delete-users')">🗑️ Delete Members</a>
+          <a href="#" onclick="showPanel('settings')">⚙️ Settings</a>
+          <a href="#" onclick="logout()">🚪 Logout</a>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <div id="grades-panel" class="panel active">
+        <div class="panel-header">
+          <h2>Grades</h2>
+        </div>
+        
+        <h3 style="color: #2196F3; margin-top: 20px; margin-bottom: 10px;">QUARTER 1</h3>
+        <div id="grades-table-q1-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('grades-table-q1-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('grades-table-q1-container')">🔍</button>
+          <table id="grades-table-q1">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th class="admin-only" style="display:none;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="grades-tbody-q1">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="color: #2196F3; margin-top: 20px; margin-bottom: 10px;">QUARTER 2</h3>
+        <div id="grades-table-q2-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('grades-table-q2-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('grades-table-q2-container')">🔍</button>
+          <table id="grades-table-q2">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th class="admin-only" style="display:none;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="grades-tbody-q2">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody >
+          </table>
+        </div>
+
+        <h3 style="color: #2196F3; margin-top: 20px; margin-bottom: 10px;">QUARTER 3</h3>
+        <div id="grades-table-q3-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('grades-table-q3-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('grades-table-q3-container')">🔍</button>
+          <table id="grades-table-q3">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th class="admin-only" style="display:none;">Actions</th>
+              </tr >
+            </thead>
+            <tbody id="grades-tbody-q3">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="color: #2196F3; margin-top: 20px; margin-bottom: 10px;">QUARTER 4</h3>
+        <div id="grades-table-q4-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('grades-table-q4-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('grades-table-q4-container')">🔍</button>
+          <table id="grades-table-q4">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Level</th>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th class="admin-only" style="display:none;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="grades-tbody-q4">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="users-panel" class="panel">
+        <div class="panel-header">
+          <h2>User Management</h2>
+        </div>
+        <div class="search-container">
+          <input type="text" id="user-search" placeholder="Search users..." oninput="filterUsers()">
+        </div>
+        
+        <div class="grade-level-tabs">
+          <div class="grade-tab active" onclick="filterUsersByGrade('all')">All</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('7')">Grade 7</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('8')">Grade 8</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('9')">Grade 9</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('10')">Grade 10</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('11')">Grade 11</div>
+          <div class="grade-tab" onclick="filterUsersByGrade('12')">Grade 12</div>
+        </div>
+
+        <div id="users-table-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('users-table-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('users-table-container')">🔍</button>
+          <table id="users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Grade Level</th>
+                <th>Section</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button id="users-prev-btn" onclick="changeUsersPage(-1)">Previous</button>
+          <span class="page-info" id="users-page-info">Page 1</span>
+          <button id="users-next-btn" onclick="changeUsersPage(1)">Next</button>
+        </div>
+      </div>
+
+      <div id="profile-panel" class="panel">
+        <div class="panel-header">
+          <h2>My Profile</h2>
+        </div>
+        <form id="profile-form" class="profile-form">
+          <div class="profile-picture-section">
+            <div class="profile-picture-container">
+              <img id="profile-picture-display" style="display:none;" alt="Profile Picture">
+              <span class="placeholder" id="profile-picture-placeholder">👤</span>
+            </div>
+            <input type="file" id="picture-input" accept="image/*" onchange="handlePictureUpload(event)">
+            <button type="button" class="picture-upload-btn" onclick="document.getElementById('picture-input').click()">
+              Upload Picture
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="profile-fullname" required>
+          </div>
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="profile-mobile">
+          </div>
+          <div class="form-group">
+            <label>Purok</label>
+            <input type="text" id="profile-purok">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <textarea id="profile-address" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Parent/Guardian Name</label>
+            <input type="text" id="profile-parent-name">
+          </div>
+          <div class="form-group">
+            <label>Parent/Guardian Phone</label>
+            <input type="tel" id="profile-parent-phone">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" style="width: auto;">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="add-grades-panel" class="panel">
+        <div class="panel-header">
+          <h2>Add/Edit Grades</h2>
+        </div>
+        <form id="add-grade-form" class="grade-form">
+          <input type="hidden" id="edit-grade-id">
+          <div class="form-group">
+            <label>Select Student *</label>
+            <select id="grade-student" required>
+              <option value="">Select Student</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quarter *</label>
+            <select id="grade-quarter" required>
+              <option value="">Select Quarter</option>
+              <option value="1">Quarter 1</option>
+              <option value="2">Quarter 2</option>
+              <option value="3">Quarter 3</option>
+              <option value="4">Quarter 4</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subject *</label>
+            <input type="text" id="grade-subject" required>
+          </div>
+          <div class="form-group">
+            <label>Grade (0-100) *</label>
+            <input type="number" id="grade-value" min="0" max="100" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" style="width: auto;">Save Grade</button>
+            <button type="button" class="btn-secondary" onclick="cancelEditGrade()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="add-admin-panel" class="panel">
+        <div class="panel-header">
+          <h2>Add Admin Account</h2>
+        </div>
+        <form id="add-admin-form" class="admin-form">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="admin-fullname" required>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="admin-email" required>
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <div class="password-input">
+              <input type="password" id="admin-password" required minlength="6">
+              <button type="button" class="toggle-password" onclick="togglePassword('admin-password')">👁️</button>
+            </div>
+            <div class="password-strength" id="admin-password-strength"></div>
+          </div>
+          <button type="submit" class="btn-primary">Create Admin Account</button>
+        </form>
+      </div>
+
+      <div id="delete-users-panel" class="panel">
+        <div class="panel-header">
+          <h2>Delete Members</h2>
+        </div>
+        
+        <div class="grade-level-tabs">
+          <div class="grade-tab active" onclick="filterDeleteUsersByGrade('all')">All</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('7')">Grade 7</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('8')">Grade 8</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('9')">Grade 9</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('10')">Grade 10</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('11')">Grade 11</div>
+          <div class="grade-tab" onclick="filterDeleteUsersByGrade('12')">Grade 12</div>
+        </div>
+
+        <div id="delete-users-table-container" class="table-container">
+          <button class="btn-zoom" onclick="zoomIn('delete-users-table-container')">🔍</button>
+          <button class="btn-zoom-out" onclick="zoomOut('delete-users-table-container')">🔍</button>
+          <table id="delete-users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="delete-users-tbody">
+              <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button id="delete-users-prev-btn" onclick="changeDeleteUsersPage(-1)">Previous</button>
+          <span class="page-info" id="delete-users-page-info">Page 1</span>
+          <button id="delete-users-next-btn" onclick="changeDeleteUsersPage(1)">Next</button>
+        </div>
+      </div>
+
+      <div id="settings-panel" class="panel">
+        <div class="panel-header">
+          <h2>Settings</h2>
+        </div>
+        <div class="settings-form">
+          <h3 style="color: #2196F3; margin-bottom: 20px;">Appearance</h3>
+          <div class="theme-toggle">
+            <label>Dark Mode</label>
+            <label class="switch">
+              <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="crop-modal" id="crop-modal">
+    <div class="crop-container">
+      <h2 style="color: #2196F3; margin-bottom: 20px; text-align: center;">Crop Your Picture</h2>
+      <div class="crop-area">
+        <img id="crop-image" alt="Crop">
+      </div>
+      <div class="crop-buttons">
+        <button class="btn-primary" onclick="applyCrop()" style="width: auto;">Apply</button>
+        <button class="btn-secondary" onclick="cancelCrop()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCYPONQgJC33Lp2OmMyKw4hssDStEwvPlQ",
+      authDomain: "test-9c727.firebaseapp.com",
+      projectId: "test-9c727",
+      storageBucket: "test-9c727.firebasestorage.app",
+      messagingSenderId: "198578631587",
+      appId: "1:198578631587:web:c0831122f964d46149e016"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    let currentUser = null;
+    let currentUserProfile = null;
+    let secondaryApp = null;
+    let cropper = null;
+    let currentUsersPage = 1;
+    let currentDeleteUsersPage = 1;
+    let usersPerPage = 6;
+    let allUsers = [];
+    let allDeleteUsers = [];
+    let currentGradeFilter = 'all';
+    let currentDeleteGradeFilter = 'all';
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUser = user;
+        const blocked = await checkIfBlocked(user.uid);
+        if (blocked) {
+          showAlert('Your account has been blocked. Please contact your admin/teacher.', 'error');
+          await auth.signOut();
+          return;
+        }
+        await loadUserProfile();
+        showDashboard();
+      } else {
+        showAuth();
+      }
+    });
+
+    async function checkIfBlocked(userId) {
+      try {
+        const doc = await db.collection('profiles').doc(userId).get();
+        if (!doc.exists) {
+          return true;
+        }
+        const data = doc.data();
+        return data.blocked === true;
+      } catch (error) {
+        console.error('Error checking blocked status:', error);
+        return false;
+      }
+    }
+
+    async function loadUserProfile() {
+      try {
+        const doc = await db.collection('profiles').doc(currentUser.uid).get();
+        if (doc.exists) {
+          currentUserProfile = { id: doc.id, ...doc.data() };
+          updateWelcomeMessage();
+          if (currentUserProfile.role === 'admin') {
+            showAdminNav();
+          } else {
+            showStudentNav();
+          }
+          
+          if (currentUserProfile.profilePicture) {
+            displayProfilePicture(currentUserProfile.profilePicture);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+
+    function updateWelcomeMessage() {
+      const welcomeMsg = document.getElementById('welcome-message');
+      if (currentUserProfile) {
+        const role = currentUserProfile.role === 'admin' ? 'ADMIN' : 'STUDENT';
+        welcomeMsg.textContent = `WELCOME TO DANSH GRADING SYSTEM – ${currentUserProfile.fullName.toUpperCase()} / ${role}`;
+      }
+    }
+
+    function showAuth() {
+      document.getElementById('auth-container').classList.add('active');
+      document.getElementById('dashboard-container').classList.remove('active');
+      hideLoading();
+    }
+
+    function showDashboard() {
+      document.getElementById('auth-container').classList.remove('active');
+      document.getElementById('dashboard-container').classList.add('active');
+      showPanel('grades');
+      hideLoading();
+      
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').checked = true;
+      }
+    }
+
+    function showAdminNav() {
+      document.getElementById('student-nav').style.display = 'none';
+      document.getElementById('admin-nav').style.display = 'block';
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    }
+
+    function showStudentNav() {
+      document.getElementById('student-nav').style.display = 'block';
+      document.getElementById('admin-nav').style.display = 'none';
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    }
+
+    function toggleAuthForm() {
+      const loginForm = document.getElementById('login-form');
+      const signupForm = document.getElementById('signup-form');
+      loginForm.classList.toggle('active');
+      signupForm.classList.toggle('active');
+      
+      window.currentVerificationCode = null;
+      document.getElementById('verification-code-display').classList.remove('show');
+    }
+
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function checkPasswordStrength(password) {
+      let strength = 'weak';
+      if (password.length >= 8) {
+        if (/[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) {
+          strength = 'strong';
+        } else if (/[A-Z]/.test(password) || /[0-9]/.test(password)) {
+          strength = 'medium';
+        }
+      }
+      return strength;
+    }
+
+    document.getElementById('signup-password').addEventListener('input', (e) => {
+      const strength = checkPasswordStrength(e.target.value);
+      const strengthEl = document.getElementById('password-strength');
+      strengthEl.textContent = `Password strength: ${strength}`;
+      strengthEl.className = 'password-strength ' + strength;
+    });
+
+    document.getElementById('admin-password').addEventListener('input', (e) => {
+      const strength = checkPasswordStrength(e.target.value);
+      const strengthEl = document.getElementById('admin-password-strength');
+      strengthEl.textContent = `Password strength: ${strength}`;
+      strengthEl.className = 'password-strength ' + strength;
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
+      
+      showLoading();
+      try {
+        const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+        await auth.setPersistence(persistence);
+        await auth.signInWithEmailAndPassword(email, password);
+        showAlert('Login successful!', 'success');
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const verificationCode = document.getElementById('signup-verification-code').value;
+      
+      if (!window.currentVerificationCode) {
+        showAlert('Please get a verification code first!', 'error');
+        return;
+      }
+      
+      if (verificationCode !== window.currentVerificationCode) {
+        showAlert('Invalid verification code!', 'error');
+        return;
+      }
+      
+      const password = document.getElementById('signup-password').value;
+      const confirmPassword = document.getElementById('signup-confirm-password').value;
+      
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match!', 'error');
+        return;
+      }
+      
+      const userData = {
+        email: document.getElementById('signup-email').value,
+        fullName: document.getElementById('signup-fullname').value,
+        gradeLevel: document.getElementById('signup-grade').value,
+        section: document.getElementById('signup-section').value,
+        parentName: document.getElementById('signup-parent-name').value,
+        parentPhone: document.getElementById('signup-parent-phone').value,
+        address: document.getElementById('signup-address').value,
+        role: 'student',
+        blocked: false
+      };
+      
+      showLoading();
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(userData.email, password);
+        await db.collection('profiles').doc(userCredential.user.uid).set(userData);
+        window.currentVerificationCode = null;
+        document.getElementById('verification-code-display').classList.remove('show');
+        showAlert('Account created successfully!', 'success');
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const profileData = {
+        fullName: document.getElementById('profile-fullname').value,
+        mobile: document.getElementById('profile-mobile').value,
+        purok: document.getElementById('profile-purok').value,
+        address: document.getElementById('profile-address').value,
+        parentName: document.getElementById('profile-parent-name').value,
+        parentPhone: document.getElementById('profile-parent-phone').value
+      };
+      
+      showLoading();
+      try {
+        await db.collection('profiles').doc(currentUser.uid).update(profileData);
+        currentUserProfile = { ...currentUserProfile, ...profileData };
+        updateWelcomeMessage();
+        await loadGrades();
+        showAlert('Profile updated successfully!', 'success');
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('add-grade-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const studentId = document.getElementById('grade-student').value;
+      const quarter = document.getElementById('grade-quarter').value;
+      const subject = document.getElementById('grade-subject').value;
+      const grade = parseInt(document.getElementById('grade-value').value);
+      const editId = document.getElementById('edit-grade-id').value;
+      
+      if (grade < 0 || grade > 100) {
+        showAlert('Grade must be between 0 and 100!', 'error');
+        return;
+      }
+      
+      const studentDoc = await db.collection('profiles').doc(studentId).get();
+      const studentData = studentDoc.data();
+      
+      const gradeData = {
+        studentId,
+        studentName: studentData.fullName,
+        gradeLevel: studentData.gradeLevel,
+        section: studentData.section,
+        quarter: quarter,
+        subject,
+        grade,
+        status: grade >= 75 ? 'Passed' : 'Failed'
+      };
+      
+      showLoading();
+      try {
+        if (editId) {
+          await db.collection('grades').doc(editId).update(gradeData);
+          showAlert('Grade updated successfully!', 'success');
+        } else {
+          await db.collection('grades').add(gradeData);
+          showAlert('Grade added successfully!', 'success');
+        }
+        document.getElementById('add-grade-form').reset();
+        document.getElementById('edit-grade-id').value = '';
+        await loadGrades();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+      const fullName = document.getElementById('admin-fullname').value;
+      
+      showLoading();
+      try {
+        if (!secondaryApp) {
+          secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary');
+        }
+        
+        const secondaryAuth = secondaryApp.auth();
+        const userCredential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        
+        await db.collection('profiles').doc(userCredential.user.uid).set({
+          email,
+          fullName,
+          role: 'admin',
+          blocked: false
+        });
+        
+        await secondaryAuth.signOut();
+        
+        showAlert('Admin account created successfully!', 'success');
+        document.getElementById('add-admin-form').reset();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    });
+
+    async function loadGrades() {
+      for (let q = 1; q <= 4; q++) {
+        const tbody = document.getElementById(`grades-tbody-q${q}`);
+        tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+        
+        try {
+          let query = db.collection('grades').where('quarter', '==', String(q));
+          
+          if (currentUserProfile.role === 'student') {
+            query = query.where('gradeLevel', '==', currentUserProfile.gradeLevel)
+                         .where('section', '==', currentUserProfile.section);
+          }
+          
+          const snapshot = await query.get();
+          
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="7">No grades found</td></tr>';
+            continue;
+          }
+          
+          tbody.innerHTML = '';
+          snapshot.forEach(doc => {
+            const grade = doc.data();
+            const row = tbody.insertRow();
+            row.innerHTML = `
+              <td>${grade.studentName}</td>
+              <td>Grade ${grade.gradeLevel}</td>
+              <td>${grade.section}</td>
+              <td>${grade.subject}</td>
+              <td>${grade.grade}</td>
+              <td class="${grade.status === 'Passed' ? 'status-passed' : 'status-failed'}">${grade.status}</td>
+              <td class="admin-only" style="${currentUserProfile.role === 'admin' ? '' : 'display:none;'}">
+                <button class="btn-edit" onclick="editGrade('${doc.id}')">Edit</button>
+                <button class="btn-delete" onclick="deleteGrade('${doc.id}')">Delete</button>
+              </td>
+            `;
+          });
+        } catch (error) {
+          tbody.innerHTML = '<tr><td colspan="7">Error loading grades</td></tr>';
+          console.error('Error loading grades:', error);
+        }
+      }
+    }
+
+    async function editGrade(gradeId) {
+      try {
+        const doc = await db.collection('grades').doc(gradeId).get();
+        const grade = doc.data();
+        
+        document.getElementById('edit-grade-id').value = gradeId;
+        document.getElementById('grade-student').value = grade.studentId;
+        document.getElementById('grade-quarter').value = grade.quarter;
+        document.getElementById('grade-subject').value = grade.subject;
+        document.getElementById('grade-value').value = grade.grade;
+        
+        showPanel('add-grades');
+      } catch (error) {
+        showAlert('Error loading grade for editing', 'error');
+      }
+    }
+
+    function sendVerificationCode() {
+      const email = document.getElementById('signup-email').value;
+      if (!email) {
+        showAlert('Please enter your email address first!', 'error');
+        return;
+      }
+      
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      window.currentVerificationCode = verificationCode;
+      
+      const displayElement = document.getElementById('verification-code-display');
+      const codeElement = document.getElementById('displayed-code');
+      codeElement.textContent = verificationCode;
+      displayElement.classList.add('show');
+      
+      showAlert('Verification code generated! Please enter it above.', 'success');
+    }
+
+    async function deleteGrade(gradeId) {
+      if (!confirm('Are you sure you want to delete this grade?')) return;
+      
+      showLoading();
+      try {
+        await db.collection('grades').doc(gradeId).delete();
+        showAlert('Grade deleted successfully!', 'success');
+        await loadGrades();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function cancelEditGrade() {
+      document.getElementById('add-grade-form').reset();
+      document.getElementById('edit-grade-id').value = '';
+    }
+
+    async function loadUsers() {
+      try {
+        const snapshot = await db.collection('profiles').get();
+        allUsers = [];
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          allUsers.push({ id: doc.id, ...user });
+        });
+        
+        currentUsersPage = 1;
+        displayUsers();
+      } catch (error) {
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = '<tr><td colspan="5">Error loading users</td></tr>';
+        console.error('Error loading users:', error);
+      }
+    }
+
+    function filterUsersByGrade(grade) {
+      currentGradeFilter = grade;
+      currentUsersPage = 1;
+      
+      document.querySelectorAll('#users-panel .grade-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      displayUsers();
+    }
+
+    function displayUsers() {
+      let filteredUsers = allUsers;
+      
+      if (currentGradeFilter !== 'all') {
+        filteredUsers = allUsers.filter(user => user.gradeLevel === currentGradeFilter);
+      }
+      
+      const searchTerm = document.getElementById('user-search').value.toLowerCase();
+      if (searchTerm) {
+        filteredUsers = filteredUsers.filter(user => {
+          const name = (user.fullName || '').toLowerCase();
+          const email = (user.email || '').toLowerCase();
+          return name.includes(searchTerm) || email.includes(searchTerm);
+        });
+      }
+      
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      const startIndex = (currentUsersPage - 1) * usersPerPage;
+      const endIndex = startIndex + usersPerPage;
+      const pageUsers = filteredUsers.slice(startIndex, endIndex);
+      
+      const tbody = document.getElementById('users-tbody');
+      if (pageUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No users found</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        pageUsers.forEach(user => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${user.fullName || 'N/A'}</td>
+            <td>${user.email}</td>
+            <td>${user.gradeLevel ? 'Grade ' + user.gradeLevel : 'N/A'}</td>
+            <td>${user.section || 'N/A'}</td>
+            <td>${user.role === 'admin' ? 'Admin' : 'Student'}</td>
+          `;
+        });
+      }
+      
+      document.getElementById('users-page-info').textContent = `Page ${currentUsersPage} of ${totalPages || 1}`;
+      document.getElementById('users-prev-btn').disabled = currentUsersPage === 1;
+      document.getElementById('users-next-btn').disabled = currentUsersPage >= totalPages;
+    }
+
+    function changeUsersPage(direction) {
+      let filteredUsers = allUsers;
+      if (currentGradeFilter !== 'all') {
+        filteredUsers = allUsers.filter(user => user.gradeLevel === currentGradeFilter);
+      }
+      
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      currentUsersPage += direction;
+      
+      if (currentUsersPage < 1) currentUsersPage = 1;
+      if (currentUsersPage > totalPages) currentUsersPage = totalPages;
+      
+      displayUsers();
+    }
+
+    function filterUsers() {
+      currentUsersPage = 1;
+      displayUsers();
+    }
+
+    async function loadDeleteUsers() {
+      try {
+        const snapshot = await db.collection('profiles').get();
+        allDeleteUsers = [];
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          if (doc.id !== currentUser.uid) {
+            allDeleteUsers.push({ id: doc.id, ...user });
+          }
+        });
+        
+        currentDeleteUsersPage = 1;
+        displayDeleteUsers();
+      } catch (error) {
+        const tbody = document.getElementById('delete-users-tbody');
+        tbody.innerHTML = '<tr><td colspan="5">Error loading users</td></tr>';
+        console.error('Error loading users:', error);
+      }
+    }
+
+    function filterDeleteUsersByGrade(grade) {
+      currentDeleteGradeFilter = grade;
+      currentDeleteUsersPage = 1;
+      
+      document.querySelectorAll('#delete-users-panel .grade-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      displayDeleteUsers();
+    }
+
+    function displayDeleteUsers() {
+      let filteredUsers = allDeleteUsers;
+      
+      if (currentDeleteGradeFilter !== 'all') {
+        filteredUsers = allDeleteUsers.filter(user => user.gradeLevel === currentDeleteGradeFilter);
+      }
+      
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      const startIndex = (currentDeleteUsersPage - 1) * usersPerPage;
+      const endIndex = startIndex + usersPerPage;
+      const pageUsers = filteredUsers.slice(startIndex, endIndex);
+      
+      const tbody = document.getElementById('delete-users-tbody');
+      if (pageUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No users found</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        pageUsers.forEach(user => {
+          const row = tbody.insertRow();
+          const isBlocked = user.blocked === true;
+          row.innerHTML = `
+            <td>${user.fullName || 'N/A'}</td>
+            <td>${user.email}</td>
+            <td>${user.role === 'admin' ? 'Admin' : 'Student'}</td>
+            <td class="${isBlocked ? 'status-blocked' : ''}">${isBlocked ? 'Blocked' : 'Active'}</td>
+            <td>
+              ${isBlocked ? 
+                `<button class="btn-restore" onclick="restoreUser('${user.id}')">Restore</button>` :
+                `<button class="btn-delete" onclick="blockUser('${user.id}')">Block</button>`
+              }
+            </td>
+          `;
+        });
+      }
+      
+      document.getElementById('delete-users-page-info').textContent = `Page ${currentDeleteUsersPage} of ${totalPages || 1}`;
+      document.getElementById('delete-users-prev-btn').disabled = currentDeleteUsersPage === 1;
+      document.getElementById('delete-users-next-btn').disabled = currentDeleteUsersPage >= totalPages;
+    }
+
+    function changeDeleteUsersPage(direction) {
+      let filteredUsers = allDeleteUsers;
+      if (currentDeleteGradeFilter !== 'all') {
+        filteredUsers = allDeleteUsers.filter(user => user.gradeLevel === currentDeleteGradeFilter);
+      }
+      
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      currentDeleteUsersPage += direction;
+      
+      if (currentDeleteUsersPage < 1) currentDeleteUsersPage = 1;
+      if (currentDeleteUsersPage > totalPages) currentDeleteUsersPage = totalPages;
+      
+      displayDeleteUsers();
+    }
+
+    async function blockUser(userId) {
+      if (!confirm('Are you sure you want to block this user? They will not be able to login until restored.')) return;
+      
+      showLoading();
+      try {
+        await db.collection('profiles').doc(userId).update({ blocked: true });
+        showAlert('User blocked successfully!', 'success');
+        await loadDeleteUsers();
+        await loadUsers();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function restoreUser(userId) {
+      if (!confirm('Are you sure you want to restore this user?')) return;
+      
+      showLoading();
+      try {
+        await db.collection('profiles').doc(userId).update({ blocked: false });
+        showAlert('User restored successfully!', 'success');
+        await loadDeleteUsers();
+        await loadUsers();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function loadStudentsForGrades() {
+      const select = document.getElementById('grade-student');
+      select.innerHTML = '<option value="">Select Student</option>';
+      
+      try {
+        const snapshot = await db.collection('profiles').where('role', '==', 'student').get();
+        snapshot.forEach(doc => {
+          const student = doc.data();
+          const option = document.createElement('option');
+          option.value = doc.id;
+          option.textContent = `${student.fullName} - Grade ${student.gradeLevel}${student.section}`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading students:', error);
+      }
+    }
+
+    async function loadProfileData() {
+      if (!currentUserProfile) return;
+      
+      document.getElementById('profile-fullname').value = currentUserProfile.fullName || '';
+      document.getElementById('profile-mobile').value = currentUserProfile.mobile || '';
+      document.getElementById('profile-purok').value = currentUserProfile.purok || '';
+      document.getElementById('profile-address').value = currentUserProfile.address || '';
+      document.getElementById('profile-parent-name').value = currentUserProfile.parentName || '';
+      document.getElementById('profile-parent-phone').value = currentUserProfile.parentPhone || '';
+      
+      if (currentUserProfile.profilePicture) {
+        displayProfilePicture(currentUserProfile.profilePicture);
+      }
+    }
+
+    function displayProfilePicture(url) {
+      const img = document.getElementById('profile-picture-display');
+      const placeholder = document.getElementById('profile-picture-placeholder');
+      img.src = url;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+    }
+
+    function handlePictureUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showAlert('Please select an image file', 'error');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const cropImage = document.getElementById('crop-image');
+        cropImage.src = e.target.result;
+        document.getElementById('crop-modal').classList.add('active');
+        
+        if (cropper) {
+          cropper.destroy();
+        }
+        
+        cropper = new Cropper(cropImage, {
+          aspectRatio: 1,
+          viewMode: 2,
+          dragMode: 'move',
+          autoCropArea: 1,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function applyCrop() {
+      if (!cropper) return;
+      
+      showLoading();
+      try {
+        const canvas = cropper.getCroppedCanvas({
+          width: 300,
+          height: 300,
+        });
+        
+        canvas.toBlob(async (blob) => {
+          const storageRef = storage.ref();
+          const profilePicRef = storageRef.child(`profile-pictures/${currentUser.uid}.jpg`);
+          
+          await profilePicRef.put(blob);
+          const downloadURL = await profilePicRef.getDownloadURL();
+          
+          await db.collection('profiles').doc(currentUser.uid).update({
+            profilePicture: downloadURL
+          });
+          
+          currentUserProfile.profilePicture = downloadURL;
+          displayProfilePicture(downloadURL);
+          
+          cancelCrop();
+          hideLoading();
+          showAlert('Profile picture updated successfully!', 'success');
+        });
+      } catch (error) {
+        hideLoading();
+        showAlert('Error uploading picture: ' + error.message, 'error');
+      }
+    }
+
+    function cancelCrop() {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      document.getElementById('crop-modal').classList.remove('active');
+      document.getElementById('picture-input').value = '';
+    }
+
+    function toggleTheme() {
+      const isDark = document.getElementById('theme-toggle').checked;
+      if (isDark) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    function showPanel(panelName) {
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+      
+      const panels = {
+        'grades': 'grades-panel',
+        'users': 'users-panel',
+        'profile': 'profile-panel',
+        'add-grades': 'add-grades-panel',
+        'add-admin': 'add-admin-panel',
+        'delete-users': 'delete-users-panel',
+        'settings': 'settings-panel'
+      };
+      
+      const panelId = panels[panelName];
+      if (panelId) {
+        const panel = document.getElementById(panelId);
+        if (panel) {
+          panel.classList.add('active');
+          
+          if (panelName === 'users') {
+            loadUsers();
+          } else if (panelName === 'delete-users') {
+            loadDeleteUsers();
+          } else if (panelName === 'profile') {
+            loadProfileData();
+          } else if (panelName === 'add-grades') {
+            loadStudentsForGrades();
+          }
+        }
+      }
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function zoomIn(containerId) {
+      const container = document.getElementById(containerId);
+      container.classList.add('zoomed');
+    }
+
+    function zoomOut(containerId) {
+      const container = document.getElementById(containerId);
+      container.classList.remove('zoomed');
+    }
+
+    function showLoading() {
+      document.getElementById('loading-overlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.remove('active');
+    }
+
+    function showAlert(message, type) {
+      const alertEl = document.createElement('div');
+      alertEl.textContent = message;
+      alertEl.className = 'alert alert-' + type + ' show';
+      document.body.appendChild(alertEl);
+      
+      setTimeout(() => {
+        alertEl.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(alertEl);
+        }, 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
